@@ -120,6 +120,24 @@ def list_pending(conn: sqlite3.Connection, limit: int = 50) -> list[FileRow]:
     return [_file_row(r) for r in rows]
 
 
+def reconcile_orphans(conn: sqlite3.Connection, *, live_paths: set[str]) -> int:
+    """Removes file rows whose nextcloud_path is no longer in the tree.
+
+    Cascades through the FK on `links` so resources.json is automatically
+    cleaned. Quarantined rows are kept on purpose: an admin should see
+    that something flagged once was later removed.
+    """
+    rows = conn.execute(
+        "SELECT id, nextcloud_path FROM files WHERE status != 'quarantined'"
+    ).fetchall()
+    removed = 0
+    for r in rows:
+        if r["nextcloud_path"] not in live_paths:
+            conn.execute("DELETE FROM files WHERE id = ?", (r["id"],))
+            removed += 1
+    return removed
+
+
 def update_scan(
     conn: sqlite3.Connection,
     *,

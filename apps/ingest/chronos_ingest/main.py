@@ -261,6 +261,17 @@ def run_tick(settings: Settings, *, anthropic_client: object | None = None) -> d
             return counts
 
         log.info("found %d files under %s", len(files), settings.nextcloud_root_path)
+
+        # Reconcile: remove DB rows for files that no longer exist in the tree
+        # (handles renames, manual deletes, moves).
+        live_paths = {f.path for f in files}
+        with db.connect(settings.sqlite_path) as conn, db.transaction(conn):
+            removed = db.reconcile_orphans(conn, live_paths=live_paths)
+        if removed:
+            log.info("reconciled %d orphan file rows", removed)
+            # Force a rebuild on the next chance — resources.json is now stale.
+            counts["processed"] = counts.get("processed", 0) + removed
+
         for f in files:
             try:
                 status = process_one_file(
