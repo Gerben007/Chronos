@@ -23,9 +23,15 @@ jobs:
           cache-dependency-path: apps/site/package-lock.json
       - run: npm ci
       - run: npm run typecheck
-      - run: npm run validate-schema --if-present
-      - run: npm run check --if-present
-      # - run: npm run build           # enabled once components exist
+      - run: npm run validate-schema
+      - run: npm run check
+      - run: npm run build
+      - name: assert build artefacts include CSP + no inline scripts
+        run: |
+          test -f dist/en/index.html
+          grep -q 'Content-Security-Policy' dist/en/index.html
+          grep -q "default-src 'self'" dist/en/index.html
+          node scripts/check-no-inline-scripts.mjs
       - name: npm audit (fail on high+)
         run: npm audit --omit=dev --audit-level=high
 

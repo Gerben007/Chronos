@@ -42,19 +42,5 @@ import '../styles/global.css';
     </div>
   </div>
 
-  <script is:inline>
-    // If a preference already exists, skip straight there.
-    try {
-      const saved = localStorage.getItem('chronos.lang');
-      if (saved === 'en' || saved === 'af') {
-        location.replace('/' + saved + '/');
-      }
-    } catch (_) { /* localStorage unavailable; show picker */ }
-
-    function remember(lang) {
-      try { localStorage.setItem('chronos.lang', lang); } catch (_) {}
-    }
-    document.getElementById('pick-en')?.addEventListener('click', () => remember('en'));
-    document.getElementById('pick-af')?.addEventListener('click', () => remember('af'));
-  </script>
+  <script is:inline src="/js/lang-picker.js"></script>
 </BaseLayout>

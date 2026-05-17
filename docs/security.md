@@ -36,10 +36,19 @@ runbooks. Update whenever a control changes.
 
 ## Headers (web container)
 
-Defined in `infra/nginx/nginx.conf`. CSP is `default-src 'self'`,
-script-src tightened to `'self'` (no inline; Astro emits hashed assets).
+Defined in `infra/nginx/nginx.conf` (production) and mirrored as a
+`<meta http-equiv="Content-Security-Policy">` in BaseLayout for dev
+parity. CSP is `default-src 'self'`, `script-src 'self'` (no inline;
+Astro emits hashed external modules; our public/js/ scripts are
+referenced with `<script is:inline src="...">` so they stay external).
+
+CI enforces both invariants:
+- `scripts/check-no-inline-scripts.mjs` fails the build if any HTML
+  file in `dist/` contains an inline `<script>` body.
+- The workflow greps every built HTML for the CSP meta tag.
+
 Updates require:
-- update `infra/nginx/nginx.conf`,
+- update `infra/nginx/nginx.conf` AND `BaseLayout.astro` (keep in sync),
 - redeploy `web`,
 - spot-check via <https://securityheaders.com>.
 

@@ -27,29 +27,29 @@ const altLang = otherLang(lang);
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light" />
     <meta name="description" content={t(lang, 'site.tagline')} />
+    {/*
+      Defence-in-depth CSP delivered as a meta tag so the policy is
+      honoured even in `astro dev` and any deployment where nginx isn't
+      in front (e.g. preview server). Production nginx ALSO emits the
+      header (infra/nginx/nginx.conf) — the meta is a backstop, not
+      the only line of defence.
+
+      `'unsafe-inline'` is permitted on style-src for the small inline
+      <style> blocks Astro emits during scoped-CSS hoisting. Scripts are
+      strictly `'self'` — Astro's hoisted modules ship as external files.
+    */}
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://nextcloud.stratusfinance.co.za https://commons.wikimedia.org; media-src 'self' https://nextcloud.stratusfinance.co.za; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta name="color-scheme" content="light" />
     <title>{fullTitle}</title>
     {LANGS.map((l) => (
       <link rel="alternate" hreflang={l} href={`/${l}${Astro.url.pathname.replace(/^\/(en|af)/, '')}`} />
     ))}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <script is:inline>
-      // TV-mode auto-trigger: ?tv=1 OR localStorage.tvMode='true' OR
-      // (viewport ≥1280 + pointer:coarse) — matches docs/design-brief spec.
-      // Runs before paint to avoid a flash of non-TV chrome.
-      (function () {
-        try {
-          const u = new URL(location.href);
-          const param = u.searchParams.get('tv');
-          if (param === '1') localStorage.setItem('tvMode', 'true');
-          if (param === '0') localStorage.removeItem('tvMode');
-          const saved = localStorage.getItem('tvMode') === 'true';
-          const viewportHints = matchMedia('(min-width: 1280px) and (pointer: coarse)').matches;
-          if (saved || param === '1' || viewportHints) {
-            document.documentElement.classList.add('tv');
-          }
-        } catch (_) { /* private mode etc. */ }
-      })();
-    </script>
+    {/* Blocking external script keeps script-src 'self' honoured AND
+        runs before paint so the gamma offset never flashes.
+        `is:inline` tells Astro NOT to bundle (the file lives in public/). */}
+    <script is:inline src="/js/tv-trigger.js"></script>
   </head>
   <body class="bg-paper text-ink-2 font-serif antialiased">
     <a href="#main" class="ch-skip-link">

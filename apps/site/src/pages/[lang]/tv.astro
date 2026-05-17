@@ -42,6 +42,10 @@ const eraData = eras.map((era) => {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://nextcloud.stratusfinance.co.za https://commons.wikimedia.org; media-src 'self' https://nextcloud.stratusfinance.co.za; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta name="color-scheme" content="light" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>Chronos · {lang === 'af' ? 'TV-modus' : 'TV mode'}</title>
     <meta name="description" content={t(lang, 'site.tagline')} />
   </head>
@@ -119,36 +123,6 @@ const eraData = eras.map((era) => {
       </footer>
     </main>
 
-    <script is:inline>
-      // Arrow-key navigation across .tv-card elements.
-      // Up/Down jumps a row (4-column grid); Left/Right within a row.
-      (function () {
-        const cols = 4;
-        function cards() { return Array.from(document.querySelectorAll('.tv-card')); }
-        function idx() { return cards().findIndex((c) => c === document.activeElement); }
-        function focus(n) {
-          const all = cards();
-          if (!all.length) return;
-          const next = Math.max(0, Math.min(all.length - 1, n));
-          all[next].focus();
-          all[next].scrollIntoView({ block: 'center', behavior: 'smooth' });
-        }
-        document.addEventListener('keydown', (e) => {
-          const i = idx();
-          if (i < 0) { if (e.key === 'ArrowDown' || e.key === 'ArrowRight') focus(0); return; }
-          switch (e.key) {
-            case 'ArrowRight': e.preventDefault(); focus(i + 1); break;
-            case 'ArrowLeft':  e.preventDefault(); focus(i - 1); break;
-            case 'ArrowDown':  e.preventDefault(); focus(i + cols); break;
-            case 'ArrowUp':    e.preventDefault(); focus(i - cols); break;
-          }
-        });
-        // Auto-focus the first card so a remote arrow press works immediately.
-        window.addEventListener('load', () => {
-          const first = cards()[0];
-          if (first) first.focus({ preventScroll: true });
-        });
-      })();
-    </script>
+    <script is:inline src="/js/tv-keynav.js"></script>
   </body>
 </html>

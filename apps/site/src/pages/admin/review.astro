@@ -1,0 +1,102 @@
+---
+/*
+ * Admin review — Phase 1 placeholder.
+ *
+ * Live route lives behind Cloudflare Access (email OTP). The full UI
+ * (file queue / quarantine / translation review) lands in Phase 2 and
+ * is served by FastAPI from the ingest container; this page is a
+ * structural placeholder so that:
+ *
+ *   1. The /admin/* path exists at deploy and CF Access can be
+ *      configured against a real URL,
+ *   2. The deploy smoke-test can confirm the path is gated correctly,
+ *   3. An admin landing on the route before Phase 2 sees a clear
+ *      explanation rather than a 404.
+ */
+
+import '../../styles/tokens.css';
+import '../../styles/global.css';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta name="robots" content="noindex,nofollow" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>Admin · Chronos</title>
+  </head>
+  <body class="bg-paper text-ink-2 font-serif antialiased">
+    <a href="#main" class="ch-skip-link">Skip to content</a>
+
+    <header class="border-b border-rule bg-paper-2">
+      <div class="mx-auto max-w-[1200px] flex items-center gap-4 px-4 py-2.5">
+        <span class="font-serif text-lg text-ink font-semibold tracking-wide">CHRONOS</span>
+        <span class="text-2xs font-sans uppercase tracking-[0.2em] text-ink-mute">· admin</span>
+        <span class="ml-auto text-2xs font-sans uppercase tracking-widest text-status-warn-fg bg-status-warn-bg rounded-pill px-2.5 py-1">
+          Phase 1 placeholder
+        </span>
+      </div>
+      <div class="h-0.5 bg-gold"></div>
+    </header>
+
+    <main id="main" tabindex="-1" class="mx-auto max-w-[1200px] px-4 py-9">
+      <h1 class="font-serif text-3xl text-ink leading-tight">Admin review</h1>
+      <p class="mt-3 max-w-prose text-ink-2">
+        This route is access-gated by Cloudflare Access (email OTP) and
+        will host the file review, quarantine, and translation-approval
+        queues once Phase 2 ships. If you're seeing this page, CF Access
+        granted you in.
+      </p>
+
+      <section class="mt-9 grid md:grid-cols-3 gap-3">
+        {[
+          {
+            tab: 'Files',
+            blurb: 'Auto-classified file → entry links awaiting confirmation. Confidence ≥0.7 auto-publishes; 0.5–0.7 queues here.',
+            badge: 'Phase 2',
+          },
+          {
+            tab: 'Quarantine',
+            blurb: 'Files flagged by ClamAV or by the AI moderation pass. Each item has a Release / Delete decision; quarantined files are never shared publicly.',
+            badge: 'Phase 2',
+          },
+          {
+            tab: 'Translations',
+            blurb: 'AI Afrikaans drafts of English wiki articles. Each draft must be reviewed (or edited and approved) before going live.',
+            badge: 'Phase 2',
+          },
+        ].map(({ tab, blurb, badge }) => (
+          <article class="rounded-md border border-rule bg-paper-2 p-4">
+            <div class="flex items-baseline justify-between">
+              <h2 class="font-serif text-lg text-ink">{tab}</h2>
+              <span class="text-2xs font-sans uppercase tracking-widest text-ink-faint">{badge}</span>
+            </div>
+            <p class="mt-2 text-sm text-ink-2">{blurb}</p>
+            <p class="mt-3 text-2xs font-sans uppercase tracking-widest text-ink-faint">
+              <span class="rounded-pill bg-paper-3 px-2 py-0.5">0 items</span>
+            </p>
+          </article>
+        ))}
+      </section>
+
+      <section class="mt-9">
+        <h2 class="font-serif text-xl text-ink">Auth check</h2>
+        <p class="mt-2 text-sm text-ink-2 max-w-prose">
+          When the ingest API is online, this section will fetch
+          <code>/admin/api/whoami</code> and show the verified email
+          from the <code>CF-Access-Jwt-Assertion</code> header. The
+          API verifies the JWT against Cloudflare's public keys on
+          every request — we do not trust the proxy alone.
+        </p>
+      </section>
+
+      <p class="mt-12 text-2xs font-sans uppercase tracking-widest text-ink-faint">
+        v0.1 · placeholder · CF Access required
+      </p>
+    </main>
+  </body>
+</html>
