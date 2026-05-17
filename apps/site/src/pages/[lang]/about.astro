@@ -1,0 +1,52 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { LANGS, type Lang } from '../../lib/types';
+import { t } from '../../lib/i18n';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+const lang = Astro.params.lang as Lang;
+---
+
+<BaseLayout lang={lang} title={t(lang, 'nav.about')} pageKey="about">
+  <section class="mx-auto max-w-[760px] px-4 pt-7 pb-12">
+    <h1 class="font-serif text-2xl text-ink">{t(lang, 'nav.about')}</h1>
+
+    {lang === 'en' ? (
+      <div class="mt-5 space-y-4 text-ink-2">
+        <p>
+          Chronos is an interactive timeline of biblical history with parallel lanes for
+          ancient civilisations and the history of the church. Each entry links to learning
+          resources contributed by mothers in our homeschool community.
+        </p>
+        <p>
+          This site collects <strong>no personal data</strong>. We use only your browser's
+          localStorage to remember your language choice and any favourites you mark.
+          There are no accounts and no third-party analytics.
+        </p>
+        <p>
+          Bible text is from public-domain translations (KJV in English, 1933/53 in Afrikaans).
+          Resources are linked, not hosted — they remain in their contributors' care.
+        </p>
+      </div>
+    ) : (
+      <div class="mt-5 space-y-4 text-ink-2">
+        <p>
+          Chronos is 'n interaktiewe tydlyn van Bybelse geskiedenis met parallelle bane vir
+          antieke beskawings en die geskiedenis van die kerk. Elke inskrywing skakel na
+          leerhulpbronne wat moeders in ons tuisskoolgemeenskap bygedra het.
+        </p>
+        <p>
+          Hierdie webwerf versamel <strong>geen persoonlike data nie</strong>. Ons gebruik
+          slegs jou blaaier se localStorage om jou taalkeuse en gunstelinge te onthou.
+          Daar is geen rekeninge of derdeparty-analise nie.
+        </p>
+        <p>
+          Bybelteks is uit publieke-domein-vertalings (KJV in Engels, 1933/53 in Afrikaans).
+          Hulpbronne word geskakel, nie gehuisves nie — hulle bly in die sorg van die bydraers.
+        </p>
+      </div>
+    )}
+  </section>
+</BaseLayout>

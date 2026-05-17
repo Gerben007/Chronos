@@ -1,0 +1,44 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { LANGS, type Lang } from '../../lib/types';
+import { t } from '../../lib/i18n';
+import { loadEntries } from '../../lib/data';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Lang;
+// Eras = period-type entries; sorted chronologically.
+const periods = loadEntries()
+  .filter((e) => e.type === 'period')
+  .sort((a, b) => a.start_year - b.start_year);
+---
+
+<BaseLayout lang={lang} title={t(lang, 'nav.eras')} pageKey="eras">
+  <section class="mx-auto max-w-[1100px] px-4 pt-7 pb-12">
+    <h1 class="font-serif text-2xl text-ink">{t(lang, 'nav.eras')}</h1>
+    <p class="mt-1 text-sm italic text-ink-mute">
+      {lang === 'af'
+        ? 'Tydperke uit die seed-data; meer kom met taak #3 (Google Sheet).'
+        : 'Periods from the seed data; more arrive with task #3 (Google Sheet).'}
+    </p>
+    <ul class="mt-5 space-y-2">
+      {periods.map((e) => {
+        const tr = e.translations[lang] ?? e.translations.en;
+        return (
+          <li>
+            <a
+              href={`/${lang}/entry/${e.slug}`}
+              class="block rounded-md border border-rule bg-paper-2 p-4 no-underline hover:border-gold"
+            >
+              <div class="font-serif text-lg text-ink">{tr.title}</div>
+              <div class="text-xs italic text-ink-mute">{tr.display_dates}</div>
+              <p class="mt-1 text-sm text-ink-2 line-clamp-1">{tr.summary}</p>
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  </section>
+</BaseLayout>

@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Self-host Lora + Inter to honour the strict CSP (no third-party domains).
+   The actual woff2 files live in /public/fonts/ and are added in the deploy
+   pipeline; @font-face stubs below are inert until those files exist. */
+
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/Lora-Variable.woff2') format('woff2-variations');
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/Lora-Italic-Variable.woff2') format('woff2-variations');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/Inter-Variable.woff2') format('woff2-variations');
+}
+
+/* ── App-level chrome ────────────────────────────────────────────────────── */
+
+html {
+  text-rendering: optimizeLegibility;
+}
+
+a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 3px; }
+a:hover { text-decoration-color: var(--gold); }
+a.no-underline, nav a { text-decoration: none; }
+
+main { min-height: calc(100dvh - 6rem); }
+
+/* ── Scripture quote ─────────────────────────────────────────────────────── */
+.scripture {
+  border-left: 2px solid var(--gold);
+  padding: 8px 14px;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 0.94em;
+  color: var(--ink);
+  background: var(--paper-2);
+  border-radius: var(--radius-md);
+}
+.scripture sup { color: var(--gold); font-weight: 600; padding-right: 2px; }
+.scripture .citation {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--font-sans);
+  font-style: normal;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}

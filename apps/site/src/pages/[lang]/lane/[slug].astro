@@ -1,0 +1,52 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { LANGS, type Lang } from '../../../lib/types';
+import { loadLanes, getEntriesByLane } from '../../../lib/data';
+
+export function getStaticPaths() {
+  const lanes = loadLanes();
+  return lanes.flatMap((lane) =>
+    LANGS.map((lang) => ({ params: { lang, slug: lane.slug }, props: { lane } })),
+  );
+}
+
+const lang = Astro.params.lang as Lang;
+const { lane } = Astro.props;
+const label = lang === 'af' && lane.label_af ? lane.label_af : lane.label_en;
+const items = getEntriesByLane(lane.slug);
+---
+
+<BaseLayout lang={lang} title={label} pageKey="lanes">
+  <section class="mx-auto max-w-[1100px] px-4 pt-7 pb-12">
+    <div class="flex items-baseline gap-3">
+      <span class="inline-block h-3 w-3 rounded-sm" style={`background:${lane.colour_soft};border:1px solid ${lane.colour}`}></span>
+      <h1 class="font-serif text-2xl text-ink">{label}</h1>
+    </div>
+    {items.length === 0 ? (
+      <p class="mt-7 text-sm italic text-ink-faint">
+        {lang === 'af' ? 'Nog geen inskrywings nie.' : 'No entries yet.'}
+      </p>
+    ) : (
+      <ul class="mt-5 space-y-2">
+        {items.map((e) => {
+          const tr = e.translations[lang] ?? e.translations.en;
+          return (
+            <li>
+              <a
+                href={`/${lang}/entry/${e.slug}`}
+                class="block rounded-md border border-rule bg-paper-2 p-4 no-underline transition hover:border-gold"
+                style={`border-left:3px solid ${lane.colour}`}
+              >
+                <div class="flex items-baseline gap-3">
+                  <span class="font-serif text-lg text-ink">{tr.title}</span>
+                  <span class="text-xs italic text-ink-mute">{tr.display_dates}</span>
+                </div>
+                <p class="mt-1 text-sm text-ink-2 line-clamp-2">{tr.summary}</p>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    )}
+  </section>
+</BaseLayout>

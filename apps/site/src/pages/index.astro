@@ -1,0 +1,60 @@
+---
+// Language picker landing page (Decision #10: one-time landing, remembered in
+// localStorage; URL is always the source of truth so direct links to /[lang]/
+// bypass this page entirely).
+import BaseLayout from '../layouts/BaseLayout.astro';
+import '../styles/tokens.css';
+import '../styles/global.css';
+---
+
+<BaseLayout lang="en" bare={true} title="Welcome">
+  <div class="min-h-dvh flex items-center justify-center px-4 py-16 bg-paper">
+    <div class="w-full max-w-md text-center">
+      <p class="text-2xs font-sans uppercase tracking-[0.3em] text-ink-mute">Chronos</p>
+      <h1 class="mt-4 font-serif text-3xl text-ink leading-tight">
+        Choose your language
+        <span class="block mt-1 text-xl text-ink-mute font-normal">Kies jou taal</span>
+      </h1>
+
+      <div class="mt-9 grid grid-cols-2 gap-3">
+        <a
+          href="/en/"
+          id="pick-en"
+          class="group rounded-lg border border-rule bg-paper-2 px-5 py-5 no-underline transition hover:border-gold hover:shadow-card"
+        >
+          <span class="block font-serif text-2xl text-ink">English</span>
+          <span class="mt-1 block text-xs font-sans uppercase tracking-widest text-ink-mute group-hover:text-gold">EN →</span>
+        </a>
+        <a
+          href="/af/"
+          id="pick-af"
+          class="group rounded-lg border border-rule bg-paper-2 px-5 py-5 no-underline transition hover:border-gold hover:shadow-card"
+        >
+          <span class="block font-serif text-2xl text-ink">Afrikaans</span>
+          <span class="mt-1 block text-xs font-sans uppercase tracking-widest text-ink-mute group-hover:text-gold">AF →</span>
+        </a>
+      </div>
+
+      <p class="mt-7 text-xs italic font-serif text-ink-faint">
+        We'll remember your choice on this device.<br />
+        Ons sal jou keuse op hierdie toestel onthou.
+      </p>
+    </div>
+  </div>
+
+  <script is:inline>
+    // If a preference already exists, skip straight there.
+    try {
+      const saved = localStorage.getItem('chronos.lang');
+      if (saved === 'en' || saved === 'af') {
+        location.replace('/' + saved + '/');
+      }
+    } catch (_) { /* localStorage unavailable; show picker */ }
+
+    function remember(lang) {
+      try { localStorage.setItem('chronos.lang', lang); } catch (_) {}
+    }
+    document.getElementById('pick-en')?.addEventListener('click', () => remember('en'));
+    document.getElementById('pick-af')?.addEventListener('click', () => remember('af'));
+  </script>
+</BaseLayout>

@@ -1,0 +1,97 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { LANGS, type Lang } from '../../../lib/types';
+import { t } from '../../../lib/i18n';
+import { loadEntries, getLaneBySlug } from '../../../lib/data';
+import { formatYear, formatYearRange } from '../../../lib/dates';
+
+export function getStaticPaths() {
+  const entries = loadEntries();
+  return entries.flatMap((entry) =>
+    LANGS.map((lang) => ({ params: { lang, slug: entry.slug }, props: { entry } })),
+  );
+}
+
+const lang = Astro.params.lang as Lang;
+const { entry } = Astro.props;
+const tr = entry.translations[lang] ?? entry.translations.en;
+const isPending = !entry.translations[lang] && lang !== 'en';
+const lane = getLaneBySlug(entry.lane_slug)!;
+const laneLabel = lang === 'af' && lane.label_af ? lane.label_af : lane.label_en;
+const dateRange = formatYearRange(entry.start_year, entry.end_year, lang);
+---
+
+<BaseLayout lang={lang} title={tr.title} pageKey="home">
+  <article class="mx-auto max-w-[1100px] px-4 pt-9 pb-12">
+    <nav class="mb-5 text-xs font-sans uppercase tracking-widest text-ink-faint" aria-label="Breadcrumb">
+      <a href={`/${lang}/`} class="hover:text-ink-mute">{t(lang, 'site.title')}</a>
+      <span aria-hidden="true"> · </span>
+      <a href={`/${lang}/lane/${lane.slug}`} class="hover:text-ink-mute">{laneLabel}</a>
+    </nav>
+
+    <header class="grid md:grid-cols-[1fr_auto] gap-6 border-b border-rule pb-7">
+      <div>
+        <span
+          class="inline-flex items-center gap-2 text-2xs font-sans uppercase tracking-[0.2em] text-ink-mute"
+        >
+          <span class="inline-block h-2.5 w-2.5 rounded-sm" style={`background:${lane.colour_soft};border:1px solid ${lane.colour}`}></span>
+          {laneLabel} · {entry.type}
+        </span>
+        <h1 class="mt-3 font-serif text-4xl text-ink leading-tight">{tr.title}</h1>
+        <p class="mt-2 font-serif italic text-lg text-ink-mute">{tr.display_dates}</p>
+      </div>
+      <div class="md:text-right text-xs font-sans uppercase tracking-widest text-ink-faint">
+        <div>
+          {lang === 'af' ? 'Belang' : 'Importance'}:
+          <span class="text-ink-mute"> {'★'.repeat(entry.importance)}<span class="text-ink-faint">{'★'.repeat(5 - entry.importance)}</span></span>
+        </div>
+        <div class="mt-1">{dateRange}</div>
+      </div>
+    </header>
+
+    {isPending && (
+      <div class="mt-5 rounded-md border border-rule-soft bg-status-ai-bg px-3.5 py-2 text-sm">
+        <span class="font-sans uppercase tracking-widest text-2xs text-ink-mute">{lang === 'af' ? 'Let wel' : 'Note'}</span>
+        <span class="mx-2 text-ink-faint">·</span>
+        <span class="italic text-ink-2">{t(lang, 'entry.translation_pending')}</span>
+      </div>
+    )}
+
+    <section class="mt-7 grid md:grid-cols-[1.6fr_1fr] gap-9">
+      <div>
+        <p class="text-lg leading-relaxed text-ink-2 font-serif">{tr.summary}</p>
+        {tr.wiki_md ? (
+          <div class="prose mt-5 max-w-none" set:html={tr.wiki_md}></div>
+        ) : (
+          <p class="mt-5 text-sm italic text-ink-faint">
+            {lang === 'af' ? 'Volledige inskrywing volg.' : 'Full entry to follow.'}
+          </p>
+        )}
+
+        {entry.scripture_refs && entry.scripture_refs.length > 0 && (
+          <aside class="mt-7">
+            <p class="text-2xs font-sans uppercase tracking-widest text-ink-mute">
+              {lang === 'af' ? 'Skrifverwysings' : 'Scripture references'}
+            </p>
+            <ul class="mt-2 flex flex-wrap gap-2">
+              {entry.scripture_refs.map((ref) => (
+                <li class="rounded-pill border border-rule px-2.5 py-1 text-xs font-sans">{ref}</li>
+              ))}
+            </ul>
+          </aside>
+        )}
+      </div>
+
+      <aside class="md:border-l md:border-rule-soft md:pl-7">
+        <p class="text-2xs font-sans uppercase tracking-widest text-ink-mute">
+          {lang === 'af' ? 'Hulpbronne' : 'Resources'}
+        </p>
+        <p class="mt-2 text-sm italic text-ink-faint">
+          {lang === 'af'
+            ? 'Lêers uit Nextcloud verskyn hier (Fase 2).'
+            : 'Files uploaded via Nextcloud will appear here (Phase 2).'}
+        </p>
+      </aside>
+    </section>
+  </article>
+</BaseLayout>

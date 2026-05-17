@@ -1,0 +1,69 @@
+---
+import '../styles/tokens.css';
+import '../styles/global.css';
+import { type Lang, LANGS } from '../lib/types';
+import { t, otherLang } from '../lib/i18n';
+import LangSwitch from '../components/lang/LangSwitch.astro';
+
+interface Props {
+  lang: Lang;
+  title?: string;
+  pageKey?: 'timeline' | 'eras' | 'lanes' | 'about' | 'home';
+  /** When true, the chrome (header + footer) is omitted. */
+  bare?: boolean;
+}
+
+const { lang, title, pageKey = 'home', bare = false } = Astro.props;
+const siteTitle = t(lang, 'site.title');
+const fullTitle = title ? `${title} · ${siteTitle}` : siteTitle;
+const altLang = otherLang(lang);
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta name="description" content={t(lang, 'site.tagline')} />
+    <title>{fullTitle}</title>
+    {LANGS.map((l) => (
+      <link rel="alternate" hreflang={l} href={`/${l}${Astro.url.pathname.replace(/^\/(en|af)/, '')}`} />
+    ))}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body class="bg-paper text-ink-2 font-serif antialiased">
+    {!bare && (
+      <header class="sticky top-0 z-30 bg-paper-2/95 backdrop-blur border-b border-rule">
+        <div class="mx-auto max-w-[1440px] flex items-center gap-7 px-4 py-3">
+          <a href={`/${lang}/`} class="font-serif text-xl tracking-wide text-ink no-underline">
+            <span class="font-semibold">CHRONOS</span>
+          </a>
+          <nav class="flex items-center gap-5 text-sm font-sans uppercase tracking-wider text-ink-mute" aria-label="Primary">
+            <a class={`hover:text-ink ${pageKey === 'timeline' ? 'text-ink' : ''}`} href={`/${lang}/timeline`}>{t(lang, 'nav.timeline')}</a>
+            <a class={`hover:text-ink ${pageKey === 'eras' ? 'text-ink' : ''}`}     href={`/${lang}/eras`}>{t(lang, 'nav.eras')}</a>
+            <a class={`hover:text-ink ${pageKey === 'lanes' ? 'text-ink' : ''}`}    href={`/${lang}/lanes`}>{t(lang, 'nav.lanes')}</a>
+            <a class={`hover:text-ink ${pageKey === 'about' ? 'text-ink' : ''}`}    href={`/${lang}/about`}>{t(lang, 'nav.about')}</a>
+          </nav>
+          <div class="ml-auto flex items-center gap-3">
+            <LangSwitch current={lang} other={altLang} pathname={Astro.url.pathname} />
+          </div>
+        </div>
+        <div class="h-px bg-gradient-to-r from-transparent via-gold to-transparent opacity-60"></div>
+      </header>
+    )}
+
+    <main>
+      <slot />
+    </main>
+
+    {!bare && (
+      <footer class="mt-25 border-t border-rule">
+        <div class="mx-auto max-w-[1440px] flex items-center justify-between px-4 py-3 text-xs font-sans text-ink-faint">
+          <span>{t(lang, 'footer.phase')}</span>
+          <a href={`/${lang}/about`} class="hover:text-ink-mute">{t(lang, 'footer.about')}</a>
+        </div>
+      </footer>
+    )}
+  </body>
+</html>

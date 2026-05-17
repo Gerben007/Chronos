@@ -1,0 +1,215 @@
+[
+  {
+    "slug": "adam",
+    "type": "person",
+    "lane_slug": "bible",
+    "start_year": -4004,
+    "end_year": -3074,
+    "importance": 4,
+    "scripture_refs": ["Genesis 1-5"],
+    "translations": {
+      "en": { "title": "Adam",  "display_dates": "4004–3074 BC",   "summary": "The first man, created on the sixth day; father of the human race." },
+      "af": { "title": "Adam",  "display_dates": "4004–3074 v.C.", "summary": "Die eerste mens, geskape op die sesde dag; vader van die mensdom." }
+    }
+  },
+  {
+    "slug": "noah",
+    "type": "event",
+    "lane_slug": "bible",
+    "start_year": -2348,
+    "importance": 5,
+    "scripture_refs": ["Genesis 6-9"],
+    "translations": {
+      "en": { "title": "Noah & the Flood", "display_dates": "c. 2348 BC",   "summary": "Global judgement and the covenant of the rainbow." },
+      "af": { "title": "Noag en die Vloed", "display_dates": "ong. 2348 v.C.", "summary": "Wêreldwye oordeel en die verbond van die reënboog." }
+    }
+  },
+  {
+    "slug": "abraham",
+    "type": "person",
+    "lane_slug": "bible",
+    "start_year": -1996,
+    "end_year": -1821,
+    "importance": 5,
+    "scripture_refs": ["Genesis 12-25"],
+    "translations": {
+      "en": { "title": "Abraham", "display_dates": "1996–1821 BC",   "summary": "Father of the faithful; called from Ur to Canaan; God's covenant of land and seed." },
+      "af": { "title": "Abraham", "display_dates": "1996–1821 v.C.", "summary": "Vader van die gelowiges; geroep uit Ur na Kanaän; God se verbond van land en saad." }
+    }
+  },
+  {
+    "slug": "joseph-in-egypt",
+    "type": "person",
+    "lane_slug": "bible",
+    "start_year": -1715,
+    "end_year": -1635,
+    "importance": 4,
+    "scripture_refs": ["Genesis 37-50"],
+    "translations": {
+      "en": { "title": "Joseph in Egypt",  "display_dates": "1715–1635 BC",   "summary": "Sold into slavery, raised over Egypt; preserves Israel through famine." },
+      "af": { "title": "Josef in Egipte",  "display_dates": "1715–1635 v.C.", "summary": "Verkoop as slaaf, verhoog oor Egipte; bewaar Israel in die hongersnood." }
+    }
+  },
+  {
+    "slug": "moses-and-exodus",
+    "type": "person",
+    "lane_slug": "bible",
+    "start_year": -1571,
+    "end_year": -1451,
+    "importance": 5,
+    "scripture_refs": ["Exodus", "Deuteronomy"],
+    "start_year_alt": { "masoretic": { "exodus_year": -1446, "source": "Kitchen" }, "lxx": { "exodus_year": -1280, "source": "Cassuto" } },
+    "translations": {
+      "en": { "title": "Moses & the Exodus",     "display_dates": "1571–1451 BC",   "summary": "Born in Egypt; leads Israel out of bondage; receives the Law at Sinai." },
+      "af": { "title": "Moses en die Uittog",    "display_dates": "1571–1451 v.C.", "summary": "Gebore in Egipte; lei Israel uit slawerny; ontvang die Wet by Sinai." }
+    }
+  },
+  {
+    "slug": "david",
+    "type": "person",
+    "lane_slug": "bible",
+    "start_year": -1085,
+    "end_year": -1015,
+    "importance": 5,
+    "scripture_refs": ["1 Samuel 16 - 1 Kings 2", "Psalms"],
+    "translations": {
+      "en": { "title": "David",  "display_dates": "1085–1015 BC",   "summary": "Shepherd, king, psalmist; the man after God's own heart." },
+      "af": { "title": "Dawid",  "display_dates": "1085–1015 v.C.", "summary": "Herder, koning, psalmdigter; die man na God se hart." }
+    }
+  },
+  {
+    "slug": "solomon",
+    "type": "person",
+    "lane_slug": "bible",
+    "start_year": -1033,
+    "end_year": -975,
+    "importance": 4,
+    "scripture_refs": ["1 Kings 1-11", "Proverbs", "Ecclesiastes"],
+    "translations": {
+      "en": { "title": "Solomon",  "display_dates": "1033–975 BC",   "summary": "Builder of the temple; the wisest king; his late drift into idolatry split the kingdom." },
+      "af": { "title": "Salomo",   "display_dates": "1033–975 v.C.", "summary": "Bouer van die tempel; die wysste koning; sy latere afdwaling het die ryk verdeel." }
+    }
+  },
+  {
+    "slug": "babylonian-exile",
+    "type": "period",
+    "lane_slug": "bible",
+    "start_year": -586,
+    "end_year": -536,
+    "importance": 5,
+    "scripture_refs": ["2 Kings 25", "Jeremiah 52", "Daniel"],
+    "translations": {
+      "en": { "title": "Babylonian Exile",   "display_dates": "586–536 BC",   "summary": "Jerusalem destroyed; Judah carried to Babylon for seventy years." },
+      "af": { "title": "Babiloniese Ballingskap", "display_dates": "586–536 v.C.", "summary": "Jerusalem verwoes; Juda sewentig jaar na Babilon weggevoer." }
+    }
+  },
+  {
+    "slug": "christ",
+    "type": "person",
+    "lane_slug": "bible",
+    "start_year": -4,
+    "end_year": 33,
+    "importance": 5,
+    "scripture_refs": ["Matthew", "Mark", "Luke", "John"],
+    "translations": {
+      "en": { "title": "Jesus Christ",  "display_dates": "4 BC – AD 33",  "summary": "The Word made flesh; lived, taught, died, and rose for the salvation of His people." },
+      "af": { "title": "Jesus Christus", "display_dates": "4 v.C. – n.C. 33", "summary": "Die Woord wat vlees geword het; gelewe, geleer, gesterf en opgestaan vir die verlossing van Sy volk." }
+    }
+  },
+  {
+    "slug": "egypt-old-kingdom",
+    "type": "period",
+    "lane_slug": "egypt",
+    "start_year": -2686,
+    "end_year": -2181,
+    "importance": 4,
+    "translations": {
+      "en": { "title": "Old Kingdom",        "display_dates": "2686–2181 BC",   "summary": "Age of the great pyramids; Memphis the capital; centralised pharaonic rule." },
+      "af": { "title": "Ou Ryk",             "display_dates": "2686–2181 v.C.", "summary": "Tyd van die groot piramides; Memfis die hoofstad; gesentraliseerde faraoniese bewind." }
+    }
+  },
+  {
+    "slug": "egypt-middle-kingdom",
+    "type": "period",
+    "lane_slug": "egypt",
+    "start_year": -2055,
+    "end_year": -1650,
+    "importance": 4,
+    "translations": {
+      "en": { "title": "Middle Kingdom",     "display_dates": "2055–1650 BC",   "summary": "Reunification under the 11th Dynasty; literature and trade flourish." },
+      "af": { "title": "Middel Ryk",         "display_dates": "2055–1650 v.C.", "summary": "Hereniging onder die 11de Dinastie; letterkunde en handel bloei." }
+    }
+  },
+  {
+    "slug": "egypt-new-kingdom",
+    "type": "period",
+    "lane_slug": "egypt",
+    "start_year": -1550,
+    "end_year": -1077,
+    "importance": 4,
+    "translations": {
+      "en": { "title": "New Kingdom",        "display_dates": "1550–1077 BC",   "summary": "Empire at its height; Thutmose, Akhenaten, Ramesses; the Exodus era." },
+      "af": { "title": "Nuwe Ryk",           "display_dates": "1550–1077 v.C.", "summary": "Ryk op sy hoogtepunt; Thoetmoses, Achnaton, Ramses; die Uittog-era." }
+    }
+  },
+  {
+    "slug": "egypt-ptolemaic",
+    "type": "period",
+    "lane_slug": "egypt",
+    "start_year": -305,
+    "end_year": -30,
+    "importance": 3,
+    "translations": {
+      "en": { "title": "Ptolemaic Egypt",    "display_dates": "305–30 BC",   "summary": "Greek-speaking dynasty after Alexander; Alexandria a centre of learning." },
+      "af": { "title": "Ptolemaïese Egipte", "display_dates": "305–30 v.C.", "summary": "Grieks-sprekende dinastie ná Alexander; Aleksandrië 'n leersentrum." }
+    }
+  },
+  {
+    "slug": "roman-republic",
+    "type": "period",
+    "lane_slug": "rome",
+    "start_year": -509,
+    "end_year": -27,
+    "importance": 4,
+    "translations": {
+      "en": { "title": "Roman Republic",     "display_dates": "509–27 BC",   "summary": "Senate and consuls; expansion across Italy and the Mediterranean." },
+      "af": { "title": "Romeinse Republiek", "display_dates": "509–27 v.C.", "summary": "Senaat en konsuls; uitbreiding oor Italië en die Middellandse See." }
+    }
+  },
+  {
+    "slug": "julius-caesar",
+    "type": "person",
+    "lane_slug": "rome",
+    "start_year": -100,
+    "end_year": -44,
+    "importance": 4,
+    "translations": {
+      "en": { "title": "Julius Caesar",  "display_dates": "100–44 BC",   "summary": "General and dictator whose assassination ends the Republic." },
+      "af": { "title": "Julius Caesar",  "display_dates": "100–44 v.C.", "summary": "Generaal en diktator wie se moord die Republiek beëindig." }
+    }
+  },
+  {
+    "slug": "roman-empire",
+    "type": "period",
+    "lane_slug": "rome",
+    "start_year": -27,
+    "end_year": 476,
+    "importance": 5,
+    "translations": {
+      "en": { "title": "Roman Empire",     "display_dates": "27 BC – AD 476",   "summary": "Augustus to Romulus Augustulus; the context of the New Testament and the early church." },
+      "af": { "title": "Romeinse Ryk",     "display_dates": "27 v.C. – n.C. 476", "summary": "Augustus tot Romulus Augustulus; die konteks van die Nuwe Testament en die vroeë kerk." }
+    }
+  },
+  {
+    "slug": "constantine",
+    "type": "person",
+    "lane_slug": "rome",
+    "start_year": 272,
+    "end_year": 337,
+    "importance": 4,
+    "translations": {
+      "en": { "title": "Constantine",   "display_dates": "AD 272–337", "summary": "First Christian emperor; Edict of Milan grants tolerance; convenes Nicaea." },
+      "af": { "title": "Konstantyn",    "display_dates": "n.C. 272–337", "summary": "Eerste Christen-keiser; Edik van Milaan verleen verdraagsaamheid; roep Nicea byeen." }
+    }
+  }
+]

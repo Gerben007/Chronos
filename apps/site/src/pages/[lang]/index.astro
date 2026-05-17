@@ -1,0 +1,83 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { LANGS, type Lang } from '../../lib/types';
+import { t } from '../../lib/i18n';
+import { loadLanes, loadEntries } from '../../lib/data';
+import { formatYearRange } from '../../lib/dates';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Lang;
+const lanes = loadLanes();
+const entries = loadEntries();
+
+// A small "featured" set for the home — top-importance per lane.
+const featuredByLane = lanes
+  .filter((l) => l.default_visible)
+  .map((lane) => {
+    const top = entries
+      .filter((e) => e.lane_slug === lane.slug)
+      .sort((a, b) => b.importance - a.importance || a.start_year - b.start_year)
+      .slice(0, 3);
+    return { lane, top };
+  });
+---
+
+<BaseLayout lang={lang} pageKey="home">
+  <section class="mx-auto max-w-[1440px] px-4 pt-9 pb-7">
+    <p class="text-2xs font-sans uppercase tracking-[0.3em] text-ink-mute">
+      {t(lang, 'site.title')}
+    </p>
+    <h1 class="mt-2 font-serif text-4xl text-ink leading-tight max-w-[42rem]">
+      {t(lang, 'site.tagline')}
+    </h1>
+    <div class="mt-5 flex gap-3 text-sm font-sans uppercase tracking-widest">
+      <a class="rounded-md border border-rule px-3 py-2 hover:border-gold hover:text-ink no-underline" href={`/${lang}/timeline`}>
+        {t(lang, 'nav.timeline')} →
+      </a>
+      <a class="rounded-md border border-rule px-3 py-2 hover:border-gold hover:text-ink no-underline" href={`/${lang}/eras`}>
+        {t(lang, 'nav.eras')}
+      </a>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-[1440px] px-4 py-9 space-y-9">
+    {featuredByLane.map(({ lane, top }) => (
+      <div>
+        <div class="flex items-baseline gap-3 border-b border-rule-soft pb-2">
+          <span
+            class="inline-block h-3 w-3 rounded-sm"
+            style={`background:${lane.colour_soft};border:1px solid ${lane.colour}`}
+            aria-hidden="true"
+          ></span>
+          <h2 class="font-serif text-xl text-ink">
+            {lang === 'af' && lane.label_af ? lane.label_af : lane.label_en}
+          </h2>
+          <span class="ml-auto text-2xs font-sans uppercase tracking-widest text-ink-faint">
+            {top.length}
+          </span>
+        </div>
+        <ul class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+          {top.map((e) => {
+            const tr = e.translations[lang] ?? e.translations.en;
+            return (
+              <li>
+                <a
+                  href={`/${lang}/entry/${e.slug}`}
+                  class="block rounded-md border border-rule bg-paper-2 p-4 no-underline transition hover:shadow-card hover:border-gold"
+                  style={`border-left:3px solid ${lane.colour}`}
+                >
+                  <div class="font-serif text-lg text-ink">{tr.title}</div>
+                  <div class="mt-1 text-xs italic text-ink-mute">{tr.display_dates}</div>
+                  <p class="mt-2 text-sm text-ink-2 line-clamp-2">{tr.summary}</p>
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    ))}
+  </section>
+</BaseLayout>

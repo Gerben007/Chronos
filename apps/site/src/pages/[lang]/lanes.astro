@@ -1,0 +1,45 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { LANGS, type Lang } from '../../lib/types';
+import { t } from '../../lib/i18n';
+import { loadLanes, getEntriesByLane } from '../../lib/data';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Lang;
+const lanes = loadLanes();
+---
+
+<BaseLayout lang={lang} title={t(lang, 'nav.lanes')} pageKey="lanes">
+  <section class="mx-auto max-w-[1100px] px-4 pt-7 pb-12">
+    <h1 class="font-serif text-2xl text-ink">{t(lang, 'nav.lanes')}</h1>
+    <ul class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+      {lanes.map((lane) => {
+        const count = getEntriesByLane(lane.slug).length;
+        const label = lang === 'af' && lane.label_af ? lane.label_af : lane.label_en;
+        return (
+          <li>
+            <a
+              href={count > 0 ? `/${lang}/lane/${lane.slug}` : undefined}
+              class={`flex items-center gap-3 rounded-md border border-rule p-4 no-underline ${count > 0 ? 'bg-paper-2 hover:border-gold' : 'bg-paper-3 opacity-70 pointer-events-none'}`}
+              style={`border-left:4px solid ${lane.colour}`}
+            >
+              <span class="inline-block h-5 w-5 rounded-sm" style={`background:${lane.colour_soft};border:1px solid ${lane.colour}`}></span>
+              <div class="flex-1">
+                <div class="font-serif text-lg text-ink">{label}</div>
+                <div class="text-2xs font-sans uppercase tracking-widest text-ink-faint">
+                  {count} {lang === 'af' ? 'inskrywings' : 'entries'}
+                  {!lane.default_visible && (
+                    <span class="ml-2">{lang === 'af' ? '· gereserveer' : '· reserved'}</span>
+                  )}
+                </div>
+              </div>
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  </section>
+</BaseLayout>

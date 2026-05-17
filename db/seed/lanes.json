@@ -1,0 +1,9 @@
+[
+  { "slug": "bible",          "label_en": "Biblical history", "label_af": "Bybelse geskiedenis", "colour": "#1F2A44", "colour_soft": "#DAD4BE", "group_label": "biblical",       "default_visible": true,  "base_layer": true,  "sort_order": 1  },
+  { "slug": "egypt",          "label_en": "Egypt",            "label_af": "Egipte",              "colour": "#A88E3A", "colour_soft": "#E8DCB2", "group_label": "empires",        "default_visible": true,  "base_layer": false, "sort_order": 2  },
+  { "slug": "rome",           "label_en": "Rome",             "label_af": "Rome",                "colour": "#8B3A1F", "colour_soft": "#E4C8B8", "group_label": "empires",        "default_visible": true,  "base_layer": false, "sort_order": 3  },
+  { "slug": "church-history", "label_en": "Church history",   "label_af": "Kerkgeskiedenis",     "colour": "#5B4A6E", "colour_soft": "#DCD2E0", "group_label": "church-history", "default_visible": false, "base_layer": false, "sort_order": 10 },
+  { "slug": "science",        "label_en": "Science",          "label_af": "Wetenskap",           "colour": "#4F7A3E", "colour_soft": "#DDE5CC", "group_label": "science",        "default_visible": false, "base_layer": false, "sort_order": 11 },
+  { "slug": "arts",           "label_en": "Arts",             "label_af": "Kunste",              "colour": "#9A4225", "colour_soft": "#ECD4C4", "group_label": "arts",           "default_visible": false, "base_layer": false, "sort_order": 12 },
+  { "slug": "reformation",    "label_en": "Reformation",      "label_af": "Hervorming",          "colour": "#2F5A6B", "colour_soft": "#CDD9DD", "group_label": "church-history", "default_visible": false, "base_layer": false, "sort_order": 13 }
+]

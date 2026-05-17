@@ -20,11 +20,9 @@ export default defineConfig({
     rehypePlugins: [[rehypeSanitize, { /* default-safe schema; no raw HTML */ }]],
     shikiConfig: { theme: 'github-light' },
   },
-  i18n: {
-    defaultLocale: 'en',
-    locales: ['en', 'af'],
-    routing: { prefixDefaultLocale: true },
-  },
+  // Manual i18n via [lang]/ dynamic routes — see src/lib/types.ts LANGS.
+  // Sticking with manual routing keeps full control over hreflang and the
+  // landing-page picker behaviour.
   vite: {
     server: { host: '127.0.0.1' },
   },

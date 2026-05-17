@@ -1,0 +1,33 @@
+---
+import type { Lang } from '../../lib/types';
+
+interface Props {
+  current: Lang;
+  other: Lang;
+  pathname: string;
+}
+const { current, other, pathname } = Astro.props;
+const swapHref = pathname.replace(/^\/(en|af)(?=\/|$)/, `/${other}`);
+
+const chipBase = 'px-2.5 py-1 rounded-pill';
+const activeChip = 'bg-ink text-paper';
+const idleChip = 'text-ink-mute hover:text-ink';
+---
+
+<div
+  class="inline-flex items-center rounded-pill border border-rule bg-paper-2 p-0.5 text-2xs font-sans uppercase tracking-widest"
+  role="group"
+  aria-label="Language"
+>
+  {current === 'en' ? (
+    <>
+      <span class={`${chipBase} ${activeChip}`} aria-current="page">EN</span>
+      <a href={swapHref} class={`${chipBase} ${idleChip}`} hreflang="af">AF</a>
+    </>
+  ) : (
+    <>
+      <a href={swapHref} class={`${chipBase} ${idleChip}`} hreflang="en">EN</a>
+      <span class={`${chipBase} ${activeChip}`} aria-current="page">AF</span>
+    </>
+  )}
+</div>
