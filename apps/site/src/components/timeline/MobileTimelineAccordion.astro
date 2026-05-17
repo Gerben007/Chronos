@@ -1,0 +1,97 @@
+---
+/*
+ * Mobile-first vertical timeline. Built from the same seed data as the
+ * canvas, but grouped by era and rendered as expanding sections. No JS
+ * dependencies; <details> handles the toggle. Per the design tokens
+ * decision: no bottom tab bar; entry cards carry left lane stripe,
+ * serif title, italic date, and a one-line blurb.
+ */
+import type { Lang } from '../../lib/types';
+import { loadLanes, loadEntries } from '../../lib/data';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+
+const lanes = loadLanes();
+const entries = loadEntries();
+function laneOf(slug: string) {
+  return lanes.find((l) => l.slug === slug);
+}
+
+// Fixed Phase-1 eras — same ranges as the TV view so navigation parity
+// holds across surfaces.
+const eras = [
+  { slug: 'patriarchs',  label_en: 'Patriarchs',  label_af: 'Aartsvaders',  from: -4100, to: -1400, default_open: true  },
+  { slug: 'kingdoms',    label_en: 'Kingdoms',    label_af: 'Konings',      from: -1400, to: -400,  default_open: true  },
+  { slug: 'christ',      label_en: 'Christ',      label_af: 'Christus',     from: -400,  to: 100,   default_open: true  },
+  { slug: 'church',      label_en: 'Church age',  label_af: 'Kerk-era',     from: 100,   to: 600,   default_open: false },
+];
+
+const buckets = eras.map((era) => {
+  const label = lang === 'af' ? era.label_af : era.label_en;
+  const items = entries
+    .filter((e) => e.start_year >= era.from && e.start_year < era.to)
+    .sort((a, b) => a.start_year - b.start_year);
+  return { era, label, items };
+});
+---
+
+<section class="ch-mobile-timeline space-y-2">
+  {buckets.map(({ era, label, items }) => (
+    <details class="rounded-md border border-rule bg-paper-2" open={era.default_open}>
+      <summary class="flex items-baseline gap-3 px-3.5 py-2.5 cursor-pointer">
+        <span class="font-serif text-lg text-ink">{label}</span>
+        <span class="text-2xs font-sans uppercase tracking-widest text-ink-faint">
+          {era.from < 0 ? `${-era.from} BC` : `AD ${era.from}`} – {era.to < 0 ? `${-era.to} BC` : `AD ${era.to}`}
+        </span>
+        <span class="ml-auto text-2xs font-sans uppercase tracking-widest text-ink-faint">
+          {items.length}
+        </span>
+      </summary>
+
+      {items.length === 0 ? (
+        <p class="px-3.5 pb-3 text-sm italic text-ink-faint">
+          {lang === 'af' ? 'Geen inskrywings nie.' : 'No entries.'}
+        </p>
+      ) : (
+        <ul class="px-2 pb-2 space-y-1.5">
+          {items.map((e) => {
+            const tr = e.translations[lang] ?? e.translations.en;
+            const lane = laneOf(e.lane_slug)!;
+            return (
+              <li>
+                <a
+                  href={`/${lang}/entry/${e.slug}`}
+                  class="flex items-start gap-2.5 rounded-md bg-paper p-2.5 no-underline transition"
+                  style={`border-left:3px solid ${lane.colour}`}
+                >
+                  <span
+                    class="mt-1 inline-block h-2.5 w-2.5 rounded-sm flex-shrink-0"
+                    style={`background:${lane.colour_soft};border:1px solid ${lane.colour}`}
+                    aria-hidden="true"
+                  ></span>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-baseline gap-2 flex-wrap">
+                      <span class="font-serif text-base text-ink">{tr.title}</span>
+                      <span class="text-2xs italic text-ink-mute">{tr.display_dates}</span>
+                    </div>
+                    <p class="mt-0.5 text-xs text-ink-2 line-clamp-2">{tr.summary}</p>
+                  </div>
+                  <svg
+                    viewBox="0 0 24 24" width="14" height="14" fill="none"
+                    stroke="currentColor" stroke-width="1.6"
+                    class="mt-1 text-ink-faint flex-shrink-0" aria-hidden="true"
+                  >
+                    <path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </details>
+  ))}
+</section>

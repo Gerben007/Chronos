@@ -106,6 +106,13 @@ export function mountTimeline(host: HTMLElement, config: TimelineConfig): Timeli
     selectable: true,
     multiselect: false,
     tooltip: { followMouse: true, overflowMethod: 'flip' },
+    cluster: {
+      titleTemplate: '+{count}',
+      maxItems: 3,
+      clusterCriteria: (a, b) =>
+        // Cluster items only within the same lane.
+        String((a as DataItem).group) === String((b as DataItem).group),
+    },
     format: {
       minorLabels: { year: 'YYYY', month: 'MMM YYYY' },
       majorLabels: { year: '', month: 'YYYY' },
@@ -126,9 +133,24 @@ export function mountTimeline(host: HTMLElement, config: TimelineConfig): Timeli
     location.assign(`/${config.lang}/entry/${slug}`);
   });
 
-  // ── Rangechange → push URL state (debounced) ───────────────────────────
+  // ── Rangechange → URL state + label density ───────────────────────────
   let rangeTimer = 0;
+  function applyDensity(start: Date, end: Date) {
+    const span = timelineDateToYear(end) - timelineDateToYear(start);
+    // Threshold ladder: tighter zoom → more labels visible.
+    //   < 200 yrs: importance ≥ 1  (everything)
+    //   200–800:   importance ≥ 2
+    //   800–2000:  importance ≥ 3
+    //   > 2000:    importance ≥ 4  (only the headlines)
+    const threshold =
+      span < 200 ? 1 : span < 800 ? 2 : span < 2000 ? 3 : 4;
+    host.dataset.densityThreshold = String(threshold);
+    host.classList.remove('density-1', 'density-2', 'density-3', 'density-4');
+    host.classList.add(`density-${threshold}`);
+  }
+  applyDensity(yearToTimelineDate(fromYear), yearToTimelineDate(toYear));
   timeline.on('rangechange', (props: { start: Date; end: Date }) => {
+    applyDensity(props.start, props.end);
     window.clearTimeout(rangeTimer);
     rangeTimer = window.setTimeout(() => {
       const url = new URL(location.href);
@@ -163,6 +185,16 @@ export function mountTimeline(host: HTMLElement, config: TimelineConfig): Timeli
       const start = yearToTimelineDate(parseInt(fromAttr, 10));
       const end = yearToTimelineDate(parseInt(toAttr, 10));
       timeline.setWindow(start, end, { animation: true });
+    });
+  });
+
+  // ── Zoom buttons (vis-timeline-native) ─────────────────────────────────
+  host.parentElement?.querySelectorAll<HTMLButtonElement>('[data-zoom]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const action = btn.dataset.zoom;
+      if (action === 'in')   timeline.zoomIn(0.5);
+      if (action === 'out')  timeline.zoomOut(0.5);
+      if (action === 'fit')  timeline.fit({ animation: true });
     });
   });
 

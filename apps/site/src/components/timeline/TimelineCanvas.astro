@@ -96,9 +96,9 @@ const toggleable = lanes.filter((l) => !l.base_layer);
     </ul>
   </aside>
 
-  <!-- ── Canvas + era jump row ──────────────────────────────────────────── -->
+  <!-- ── Canvas + era jump row + zoom controls ──────────────────────────── -->
   <div>
-    <div class="flex flex-wrap items-baseline gap-2 mb-3">
+    <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1 mb-3">
       {config.eras.map((era) => (
         <button
           type="button"
@@ -110,9 +110,32 @@ const toggleable = lanes.filter((l) => !l.base_layer);
           {era.label}
         </button>
       ))}
+      <div class="ml-auto flex items-center gap-1.5" role="group" aria-label={lang === 'af' ? 'Zoom' : 'Zoom'}>
+        <button
+          type="button" data-zoom="out"
+          class="ch-zoom-btn"
+          aria-label={lang === 'af' ? 'Zoom uit' : 'Zoom out'}
+        >
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 12h14"/></svg>
+        </button>
+        <button
+          type="button" data-zoom="fit"
+          class="ch-zoom-btn"
+          aria-label={lang === 'af' ? 'Pas in' : 'Fit'}
+        >
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8V4h4"/><path d="M21 8V4h-4"/><path d="M3 16v4h4"/><path d="M21 16v4h-4"/></svg>
+        </button>
+        <button
+          type="button" data-zoom="in"
+          class="ch-zoom-btn"
+          aria-label={lang === 'af' ? 'Zoom in' : 'Zoom in'}
+        >
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </div>
     </div>
 
-    <div id="ch-timeline" class="ch-canvas" data-config={configJson} aria-label={t(lang, 'nav.timeline')}></div>
+    <div id="ch-timeline" class="ch-canvas density-3" data-config={configJson} aria-label={t(lang, 'nav.timeline')}></div>
 
     <p class="mt-2 text-2xs font-sans uppercase tracking-widest text-ink-faint">
       <span>{t(lang, 'timeline.drag_to_pan')}</span>
@@ -254,4 +277,61 @@ const toggleable = lanes.filter((l) => !l.base_layer);
     opacity: 0.4;
     cursor: not-allowed;
   }
+
+  /* ── Zoom controls ──────────────────────────────────────────────────── */
+  .ch-zoom-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-sm);
+    background: var(--paper-2);
+    color: var(--ink-mute);
+    cursor: pointer;
+    transition: border-color 120ms ease, color 120ms ease;
+  }
+  .ch-zoom-btn:hover { border-color: var(--gold); color: var(--ink); }
+  .ch-zoom-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+  /* ── Label-density rules: collapse non-prominent labels at wide zoom ─── */
+  /* The hosting div carries .density-N where N is the minimum importance
+     to show a full label. Lower-importance items are still on-screen but
+     reduced to the dot/bar without text, so density at far-out zoom stays
+     readable. */
+  .ch-canvas.density-2 .vis-item.ch-importance-1 .ch-label,
+  .ch-canvas.density-2 .vis-item.ch-importance-1 .ch-date,
+  .ch-canvas.density-3 .vis-item.ch-importance-1 .ch-label,
+  .ch-canvas.density-3 .vis-item.ch-importance-1 .ch-date,
+  .ch-canvas.density-3 .vis-item.ch-importance-2 .ch-label,
+  .ch-canvas.density-3 .vis-item.ch-importance-2 .ch-date,
+  .ch-canvas.density-4 .vis-item.ch-importance-1 .ch-label,
+  .ch-canvas.density-4 .vis-item.ch-importance-1 .ch-date,
+  .ch-canvas.density-4 .vis-item.ch-importance-2 .ch-label,
+  .ch-canvas.density-4 .vis-item.ch-importance-2 .ch-date,
+  .ch-canvas.density-4 .vis-item.ch-importance-3 .ch-label,
+  .ch-canvas.density-4 .vis-item.ch-importance-3 .ch-date {
+    display: none;
+  }
+  /* For dot items below threshold, also shrink the dot to a tick. */
+  .ch-canvas.density-3 .vis-item.ch-point.ch-importance-1 .vis-dot,
+  .ch-canvas.density-3 .vis-item.ch-point.ch-importance-2 .vis-dot,
+  .ch-canvas.density-4 .vis-item.ch-point.ch-importance-1 .vis-dot,
+  .ch-canvas.density-4 .vis-item.ch-point.ch-importance-2 .vis-dot,
+  .ch-canvas.density-4 .vis-item.ch-point.ch-importance-3 .vis-dot {
+    width: 7px; height: 7px;
+  }
+
+  /* ── Clustered items (vis-timeline 'cluster' option) ────────────────── */
+  .ch-canvas .vis-item.vis-cluster {
+    background: var(--paper-3);
+    border: 1px dashed var(--rule);
+    color: var(--ink-mute);
+    font-family: var(--font-sans);
+    font-size: 11px;
+    border-radius: var(--radius-pill);
+    padding: 1px 6px;
+  }
+  .ch-canvas .vis-item.vis-cluster:hover { border-color: var(--gold); color: var(--ink); }
 </style>

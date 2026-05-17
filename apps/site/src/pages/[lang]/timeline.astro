@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import TimelineCanvas from '../../components/timeline/TimelineCanvas.astro';
 import TimelineTable from '../../components/timeline/TimelineTable.astro';
+import MobileTimelineAccordion from '../../components/timeline/MobileTimelineAccordion.astro';
 import { LANGS, type Lang } from '../../lib/types';
 import { t } from '../../lib/i18n';
 
@@ -14,7 +15,14 @@ const lang = Astro.params.lang as Lang;
 <BaseLayout lang={lang} title={t(lang, 'nav.timeline')} pageKey="timeline">
   <section class="mx-auto max-w-[1440px] px-4 pt-7 pb-12">
     <h1 class="sr-only">{t(lang, 'nav.timeline')}</h1>
-    <TimelineCanvas lang={lang} />
+    {/* Desktop: full vis-timeline canvas. Below md, hide it and show the
+        mobile accordion instead — same data, different surface. */}
+    <div class="hidden md:block">
+      <TimelineCanvas lang={lang} />
+    </div>
+    <div class="block md:hidden">
+      <MobileTimelineAccordion lang={lang} />
+    </div>
     <TimelineTable lang={lang} />
   </section>
 </BaseLayout>
