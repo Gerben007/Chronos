@@ -77,8 +77,19 @@ class NextcloudClient:
     def list_dir(self, remote_path: str) -> list[RemoteFile]:
         """Returns the files (not subdirs) inside the given remote path.
 
-        `remote_path` is absolute within the user root, e.g. "/CC-Library/_inbox".
+        `remote_path` is absolute within the user root, e.g. "/Chronos".
         """
+        return self._propfind(remote_path, depth="1")
+
+    def list_tree(self, remote_path: str) -> list[RemoteFile]:
+        """Recursive listing of all files anywhere under `remote_path`.
+
+        Uses WebDAV Depth: infinity. Most Nextcloud installs allow this,
+        but the body can get large for deep trees.
+        """
+        return self._propfind(remote_path, depth="infinity")
+
+    def _propfind(self, remote_path: str, *, depth: str) -> list[RemoteFile]:
         url = self._dav_url(remote_path)
         body = (
             '<?xml version="1.0"?>'
@@ -96,7 +107,7 @@ class NextcloudClient:
             "PROPFIND",
             url,
             content=body,
-            headers={"Depth": "1", "Content-Type": "application/xml"},
+            headers={"Depth": depth, "Content-Type": "application/xml"},
         )
         if r.status_code == 404:
             return []
@@ -203,9 +214,17 @@ class NextcloudClient:
         return urljoin(self._base, self._dav_root + quote(path, safe="/"))
 
     def _parse_propfind(self, body: str, *, parent_path: str) -> list[RemoteFile]:
+        """Returns every file in the response, regardless of depth.
+
+        Paths in the result are absolute within the user's WebDAV root
+        (e.g. "/Chronos/Cycle 1/Week 5/foo.pdf"), reconstructed from the
+        response href by stripping the DAV prefix `remote.php/dav/files/USER/`.
+        """
+        from urllib.parse import unquote
+
         root = ET.fromstring(body)
         files: list[RemoteFile] = []
-        parent_prefix = self._dav_root + parent_path.strip("/").rstrip("/")
+        dav_prefix = "/" + self._dav_root.rstrip("/")
         for resp in root.findall(f"{{{WEBDAV_NS}}}response"):
             href = resp.findtext(f"{{{WEBDAV_NS}}}href") or ""
             propstat = resp.find(f"{{{WEBDAV_NS}}}propstat")
@@ -216,21 +235,16 @@ class NextcloudClient:
                 continue
             rtype = prop.find(f"{{{WEBDAV_NS}}}resourcetype")
             is_dir = rtype is not None and rtype.find(f"{{{WEBDAV_NS}}}collection") is not None
-
-            # Skip the parent dir entry itself.
-            normalized_href = href.rstrip("/")
-            normalized_parent = parent_prefix.rstrip("/")
-            if normalized_href.endswith(normalized_parent):
-                continue
             if is_dir:
                 continue
 
-            name = normalized_href.rsplit("/", 1)[-1]
-            try:
-                from urllib.parse import unquote
-                name = unquote(name)
-            except Exception:
-                pass
+            # Strip the DAV prefix from href to get a path within the user root.
+            decoded = unquote(href)
+            if dav_prefix in decoded:
+                rel = decoded.split(dav_prefix, 1)[1]
+            else:
+                rel = decoded
+            rel = "/" + rel.lstrip("/")
 
             size_str = prop.findtext(f"{{{WEBDAV_NS}}}getcontentlength") or "0"
             ctype = prop.findtext(f"{{{WEBDAV_NS}}}getcontenttype") or "application/octet-stream"
@@ -238,8 +252,8 @@ class NextcloudClient:
 
             files.append(
                 RemoteFile(
-                    path=f"{parent_path.rstrip('/')}/{name}",
-                    name=name,
+                    path=rel,
+                    name=rel.rsplit("/", 1)[-1],
                     size=int(size_str) if size_str.isdigit() else 0,
                     content_type=ctype,
                     etag=etag,
@@ -279,3 +293,63 @@ def classify_filetype(name: str) -> str | None:
     """Returns the schema's file_type label, or None if unsupported."""
     suffix = Path(name).suffix.lower()
     return _EXT_TO_TYPE.get(suffix)
+
+
+# ── Path → CC metadata ────────────────────────────────────────────────
+
+
+@dataclass(frozen=True)
+class PathMetadata:
+    """CC metadata derived from the folder containing a file.
+
+    `stage` is one of 'foundations', 'essentials', 'challenge' — matching
+    the user's `1. Foundations`, `2. Essentials`, `3. Challenge` folders.
+    """
+
+    cycle: int | None
+    stage: str | None
+    week: int | None
+
+
+_STAGE_KEYWORDS = (
+    ("foundations", "foundations"),
+    ("grammar",     "foundations"),
+    ("essentials",  "essentials"),
+    ("dialectic",   "essentials"),
+    ("challenge",   "challenge"),
+    ("rhetoric",    "challenge"),
+)
+
+
+def parse_path_metadata(remote_path: str) -> PathMetadata:
+    """Inspects the path components for `Cycle N`, a stage keyword, and `Week N`.
+
+    Matches anywhere in the path — works for both:
+      /Chronos/Cycle 1/1. Foundations (Grammar Stage)/Week 5/foo.pdf
+      /Chronos/Cycle 2/2. Essentials/Week 10/sub/foo.pdf
+    """
+    import re
+
+    cycle: int | None = None
+    stage: str | None = None
+    week: int | None = None
+    for part in remote_path.split("/"):
+        lowered = part.lower()
+        if cycle is None:
+            m = re.search(r"\bcycle\s*(\d)\b", lowered)
+            if m:
+                v = int(m.group(1))
+                if v in (1, 2, 3):
+                    cycle = v
+        if stage is None:
+            for keyword, label in _STAGE_KEYWORDS:
+                if keyword in lowered:
+                    stage = label
+                    break
+        if week is None:
+            m = re.search(r"\bweek\s*(\d{1,2})\b", lowered)
+            if m:
+                v = int(m.group(1))
+                if 1 <= v <= 24:
+                    week = v
+    return PathMetadata(cycle=cycle, stage=stage, week=week)

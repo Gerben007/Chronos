@@ -133,15 +133,29 @@ def build_user_message(
     file_type: str,
     size_bytes: int | None,
     extracted_text: str | None,
-    filename_cc_cycle: int | None,
-    filename_cc_week: int | None,
+    path_cycle: int | None = None,
+    path_stage: str | None = None,
+    path_week: int | None = None,
+    filename_cc_cycle: int | None = None,
+    filename_cc_week: int | None = None,
 ) -> str:
     parts: list[str] = []
     parts.append(f"Title: {title}")
     parts.append(f"File type: {file_type}")
     if size_bytes is not None:
         parts.append(f"Size bytes: {size_bytes}")
-    if filename_cc_cycle is not None:
+    # Path-derived hints are stronger than filename hints — the folder
+    # structure is authoritative for CC cycle/stage/week.
+    path_hints: list[str] = []
+    if path_cycle is not None:
+        path_hints.append(f"cycle {path_cycle}")
+    if path_stage is not None:
+        path_hints.append(f"{path_stage} stage")
+    if path_week is not None:
+        path_hints.append(f"week {path_week}")
+    if path_hints:
+        parts.append("Authoritative folder metadata: " + ", ".join(path_hints))
+    elif filename_cc_cycle is not None:
         hint = f"Filename suggests CC cycle {filename_cc_cycle}"
         if filename_cc_week is not None:
             hint += f", week {filename_cc_week}"
@@ -236,14 +250,24 @@ def classify_file(
     extracted_text: str | None,
     filename: str,
     entries: list[dict[str, Any]],
+    path_cycle: int | None = None,
+    path_stage: str | None = None,
+    path_week: int | None = None,
 ) -> Classification:
-    """Single Haiku call. Caller is responsible for budget check."""
+    """Single Haiku call. Caller is responsible for budget check.
+
+    Path hints (cycle/stage/week derived from the folder structure) take
+    precedence over filename hints when both are present.
+    """
     cycle_hint, week_hint = parse_cc_from_filename(filename)
     user_msg = build_user_message(
         title=title,
         file_type=file_type,
         size_bytes=size_bytes,
         extracted_text=extracted_text,
+        path_cycle=path_cycle,
+        path_stage=path_stage,
+        path_week=path_week,
         filename_cc_cycle=cycle_hint,
         filename_cc_week=week_hint,
     )

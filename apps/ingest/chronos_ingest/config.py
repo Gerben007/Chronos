@@ -32,9 +32,9 @@ class Settings(BaseSettings):
     nextcloud_url: str = Field(default="")
     nextcloud_user: str = Field(default="")
     nextcloud_app_password: str = Field(default="")
-    nextcloud_inbox_path: str = "/CC-Library/_inbox"
-    nextcloud_processed_path: str = "/CC-Library/_processed"
-    nextcloud_quarantine_path: str = "/CC-Library/_quarantine"
+    # Single recursive scan root. Files stay in place; status is tracked in
+    # the DB. CC cycle/stage/week are inferred from the folder structure.
+    nextcloud_root_path: str = "/Chronos"
 
     # ── Anthropic ─────────────────────────────────────────────────────
     anthropic_api_key: str = Field(default="")

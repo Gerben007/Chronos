@@ -20,7 +20,7 @@ def test_defaults_when_env_empty(monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     assert s.anthropic_model.startswith("claude-haiku-")
     assert s.daily_haiku_budget_usd == 1.0
     assert s.webhook_max_age_seconds == 300
-    assert s.nextcloud_inbox_path == "/CC-Library/_inbox"
+    assert s.nextcloud_root_path == "/Chronos"
 
 
 def test_env_overrides(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
