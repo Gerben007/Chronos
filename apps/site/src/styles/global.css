@@ -39,6 +39,69 @@ a:hover { text-decoration-color: var(--gold); }
 a.no-underline, nav a { text-decoration: none; }
 
 main { min-height: calc(100dvh - 6rem); }
+main:focus { outline: none; }
+
+/* ── Skip link ───────────────────────────────────────────────────────────── */
+.ch-skip-link {
+  position: absolute;
+  left: 8px;
+  top: -100px;
+  z-index: 100;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  text-decoration: none;
+  transition: top 120ms ease;
+}
+.ch-skip-link:focus { top: 8px; }
+
+/* ── Prose (wiki Markdown) ───────────────────────────────────────────────── */
+.ch-prose { font-family: var(--font-serif); color: var(--ink-2); }
+.ch-prose > * + * { margin-top: 1em; }
+.ch-prose h2 {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-top: 1.6em;
+  letter-spacing: -0.005em;
+}
+.ch-prose h3 {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-top: 1.4em;
+}
+.ch-prose p { font-size: 17px; line-height: 1.7; }
+.ch-prose strong { color: var(--ink); font-weight: 600; }
+.ch-prose em { font-style: italic; color: var(--ink); }
+.ch-prose a { color: var(--ink); text-decoration-color: var(--gold); }
+.ch-prose a:hover { color: var(--gold); }
+.ch-prose ul, .ch-prose ol { padding-left: 1.4em; }
+.ch-prose ul { list-style: disc; }
+.ch-prose ol { list-style: decimal; }
+.ch-prose li + li { margin-top: 0.4em; }
+.ch-prose blockquote {
+  border-left: 2px solid var(--gold);
+  padding: 8px 14px;
+  font-style: italic;
+  color: var(--ink);
+  background: var(--paper-2);
+  border-radius: var(--radius-md);
+}
+.ch-prose blockquote p { font-size: 16px; }
+.ch-prose code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  background: var(--paper-3);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+.ch-prose hr { border: none; border-top: 1px solid var(--rule-soft); margin: 2em 0; }
 
 /* ── Scripture quote ─────────────────────────────────────────────────────── */
 .scripture {

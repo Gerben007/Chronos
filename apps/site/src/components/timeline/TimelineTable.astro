@@ -1,0 +1,78 @@
+---
+// Accessibility-first parallel view of the timeline data.
+// Renders inside a <details> so it ships in every build (works without JS,
+// for screen readers, and as a "what is on this page" overview).
+
+import type { Lang } from '../../lib/types';
+import { loadEntries, loadLanes } from '../../lib/data';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+
+const lanes = loadLanes();
+const entries = loadEntries().sort((a, b) => a.start_year - b.start_year);
+
+function laneLabel(slug: string): string {
+  const l = lanes.find((x) => x.slug === slug);
+  if (!l) return slug;
+  return lang === 'af' && l.label_af ? l.label_af : l.label_en;
+}
+function laneColour(slug: string): string {
+  return lanes.find((x) => x.slug === slug)?.colour ?? '#1F2A44';
+}
+
+const headers = lang === 'af'
+  ? ['Inskrywing', 'Baan', 'Soort', 'Datums', 'Belang']
+  : ['Entry', 'Lane', 'Type', 'Dates', 'Importance'];
+const captionLabel = lang === 'af'
+  ? 'Tabelaanbieding van die tydlyn — toeganklik vir skermlesers.'
+  : 'Table view of the timeline — accessible for screen readers.';
+const summaryLabel = lang === 'af'
+  ? `Wys as tabel (${entries.length} inskrywings)`
+  : `Show as table (${entries.length} entries)`;
+---
+
+<details class="ch-timeline-table mt-6 rounded-md border border-rule bg-paper-2">
+  <summary class="cursor-pointer px-4 py-2.5 font-sans text-sm uppercase tracking-widest text-ink-mute hover:text-ink">
+    {summaryLabel}
+  </summary>
+  <div class="p-4 overflow-x-auto">
+    <table class="w-full text-left font-serif text-sm">
+      <caption class="sr-only">{captionLabel}</caption>
+      <thead>
+        <tr class="border-b border-rule">
+          {headers.map((h) => (
+            <th scope="col" class="px-2 py-2 font-sans text-2xs uppercase tracking-widest text-ink-mute">
+              {h}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {entries.map((e) => {
+          const tr = e.translations[lang] ?? e.translations.en;
+          return (
+            <tr class="border-b border-rule-soft">
+              <th scope="row" class="px-2 py-2 font-serif text-ink font-medium">
+                <a href={`/${lang}/entry/${e.slug}`}>{tr.title}</a>
+              </th>
+              <td class="px-2 py-2">
+                <span class="inline-flex items-center gap-1.5">
+                  <span class="inline-block h-2 w-2 rounded-sm" style={`background:${laneColour(e.lane_slug)}`}></span>
+                  {laneLabel(e.lane_slug)}
+                </span>
+              </td>
+              <td class="px-2 py-2 text-ink-mute">{e.type}</td>
+              <td class="px-2 py-2 italic text-ink-mute">{tr.display_dates}</td>
+              <td class="px-2 py-2 text-ink-mute" aria-label={`Importance ${e.importance} of 5`}>
+                {'★'.repeat(e.importance)}<span class="text-ink-faint">{'★'.repeat(5 - e.importance)}</span>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  </div>
+</details>

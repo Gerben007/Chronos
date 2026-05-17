@@ -52,6 +52,9 @@ const altLang = otherLang(lang);
     </script>
   </head>
   <body class="bg-paper text-ink-2 font-serif antialiased">
+    <a href="#main" class="ch-skip-link">
+      {lang === 'af' ? 'Spring na inhoud' : 'Skip to content'}
+    </a>
     {!bare && (
       <header class="sticky top-0 z-30 bg-paper-2/95 backdrop-blur border-b border-rule">
         <div class="mx-auto max-w-[1440px] flex items-center gap-7 px-4 py-3">
@@ -72,7 +75,7 @@ const altLang = otherLang(lang);
       </header>
     )}
 
-    <main>
+    <main id="main" tabindex="-1">
       <slot />
     </main>
 

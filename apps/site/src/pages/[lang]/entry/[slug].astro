@@ -3,7 +3,8 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { LANGS, type Lang } from '../../../lib/types';
 import { t } from '../../../lib/i18n';
 import { loadEntries, getLaneBySlug } from '../../../lib/data';
-import { formatYear, formatYearRange } from '../../../lib/dates';
+import { formatYearRange } from '../../../lib/dates';
+import { getWiki, hasWiki } from '../../../lib/wiki';
 
 export function getStaticPaths() {
   const entries = loadEntries();
@@ -15,10 +16,20 @@ export function getStaticPaths() {
 const lang = Astro.params.lang as Lang;
 const { entry } = Astro.props;
 const tr = entry.translations[lang] ?? entry.translations.en;
-const isPending = !entry.translations[lang] && lang !== 'en';
 const lane = getLaneBySlug(entry.lane_slug)!;
 const laneLabel = lang === 'af' && lane.label_af ? lane.label_af : lane.label_en;
 const dateRange = formatYearRange(entry.start_year, entry.end_year, lang);
+
+// Wiki Markdown lives in src/content/wiki/<lang>/<slug>.md.
+// If the requested language is missing, fall back to English with a
+// 'translation pending' badge — never silently substitute.
+const wikiThisLang = await getWiki(entry.slug, lang);
+const wikiFallback = wikiThisLang ? null : await getWiki(entry.slug, 'en');
+const wiki = wikiThisLang ?? wikiFallback;
+const wikiIsFallback = !wikiThisLang && !!wikiFallback;
+const summaryIsPending = !entry.translations[lang] && lang !== 'en';
+const wikiAnywhere = await hasWiki(entry.slug);
+const Content = wiki ? (await wiki.render()).Content : null;
 ---
 
 <BaseLayout lang={lang} title={tr.title} pageKey="home">
@@ -49,7 +60,7 @@ const dateRange = formatYearRange(entry.start_year, entry.end_year, lang);
       </div>
     </header>
 
-    {isPending && (
+    {(summaryIsPending || wikiIsFallback) && (
       <div class="mt-5 rounded-md border border-rule-soft bg-status-ai-bg px-3.5 py-2 text-sm">
         <span class="font-sans uppercase tracking-widest text-2xs text-ink-mute">{lang === 'af' ? 'Let wel' : 'Note'}</span>
         <span class="mx-2 text-ink-faint">·</span>
@@ -60,8 +71,10 @@ const dateRange = formatYearRange(entry.start_year, entry.end_year, lang);
     <section class="mt-7 grid md:grid-cols-[1.6fr_1fr] gap-9">
       <div>
         <p class="text-lg leading-relaxed text-ink-2 font-serif">{tr.summary}</p>
-        {tr.wiki_md ? (
-          <div class="prose mt-5 max-w-none" set:html={tr.wiki_md}></div>
+        {Content ? (
+          <div class="ch-prose mt-6 max-w-none">
+            <Content />
+          </div>
         ) : (
           <p class="mt-5 text-sm italic text-ink-faint">
             {lang === 'af' ? 'Volledige inskrywing volg.' : 'Full entry to follow.'}
