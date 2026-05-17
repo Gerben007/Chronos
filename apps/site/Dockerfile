@@ -2,14 +2,17 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json package-lock.json ./
+# Copy package files from site directory
+COPY apps/site/package.json apps/site/package-lock.json ./
 
 # Install dependencies
 RUN npm ci
 
-# Copy source
+# Copy entire repo (needed for /db/seed/entries.json)
 COPY . .
+
+# Copy site source to working directory
+COPY apps/site ./
 
 # Build static site
 RUN npm run build
