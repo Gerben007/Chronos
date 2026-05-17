@@ -1,0 +1,41 @@
+{
+  "site": {
+    "title": "Chronos",
+    "tagline": "'n Interaktiewe tydlyn van Bybelse geskiedenis"
+  },
+  "nav": {
+    "timeline": "Tydlyn",
+    "eras":     "Tydperke",
+    "lanes":    "Bane",
+    "about":    "Oor"
+  },
+  "lang": {
+    "picker_heading":  "Kies jou taal",
+    "remember":        "Ons sal jou keuse op hierdie toestel onthou.",
+    "switch_to_af":    "Skakel oor na Afrikaans",
+    "switch_to_en":    "Switch to English"
+  },
+  "timeline": {
+    "drag_to_pan":  "Sleep om te skuif",
+    "arrow_step":   "Pyltjies om te beweeg",
+    "enter_open":   "Enter om oop te maak",
+    "more_n":       "+{n} meer"
+  },
+  "entry": {
+    "open":        "Maak inskrywing oop",
+    "favourite":   "Voeg by gunstelinge",
+    "unfavourite": "Verwyder van gunstelinge",
+    "translation_pending": "Afrikaanse vertaling wag op hersiening"
+  },
+  "search": {
+    "placeholder": "Soek…",
+    "also_af":     "Soek ook in Engels →"
+  },
+  "era": {
+    "all_history": "Hele geskiedenis"
+  },
+  "footer": {
+    "phase": "v0.1 · Fase 1",
+    "about": "Oor"
+  }
+}

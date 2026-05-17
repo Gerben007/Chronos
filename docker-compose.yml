@@ -1,0 +1,90 @@
+# Chronos — production compose file for the homelab.
+# All images MUST be pinned by SHA-256 digest before deploy. Placeholders below
+# are intentionally generic so this file fails closed if used unchanged.
+
+services:
+  web:
+    image: nginx:1.27-alpine@sha256:REPLACE_WITH_DIGEST
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, SETUID, SETGID, NET_BIND_SERVICE]
+    security_opt: ["no-new-privileges:true"]
+    user: "1000:1000"
+    ports:
+      - "127.0.0.1:8080:8080"        # tunnel only; no public bind
+    volumes:
+      - ./dist:/usr/share/nginx/html:ro
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - nginx-cache:/var/cache/nginx
+      - nginx-run:/var/run
+    networks: [chronos]
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+    restart: unless-stopped
+
+  ingest:
+    image: chronos/ingest@sha256:REPLACE_WITH_DIGEST
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    user: "1000:1000"
+    env_file: .env
+    volumes:
+      - ./db:/data/db
+      - ./dist:/data/dist
+      - ingest-tmp:/tmp                          # writable scratch for downloads
+      - /var/run/clamav:/var/run/clamav:ro
+    depends_on:
+      clamav:
+        condition: service_healthy
+    networks: [chronos]
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+    restart: unless-stopped
+
+  clamav:
+    image: clamav/clamav:1.4@sha256:REPLACE_WITH_DIGEST
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    volumes:
+      - clamav-db:/var/lib/clamav
+      - /var/run/clamav:/var/run/clamav
+    healthcheck:
+      test: ["CMD", "clamdcheck.sh"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s                         # initial DB pull is slow
+    networks: [chronos]
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 2G
+    restart: unless-stopped
+
+  cloudflared:
+    image: cloudflare/cloudflared:2025.1.0@sha256:REPLACE_WITH_DIGEST
+    command: tunnel --no-autoupdate run
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    networks: [chronos]
+    restart: unless-stopped
+
+volumes:
+  nginx-cache:
+  nginx-run:
+  ingest-tmp:
+  clamav-db:
+
+networks:
+  chronos:
+    driver: bridge

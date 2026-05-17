@@ -1,0 +1,41 @@
+{
+  "site": {
+    "title": "Chronos",
+    "tagline": "An interactive timeline of biblical history"
+  },
+  "nav": {
+    "timeline": "Timeline",
+    "eras":     "Eras",
+    "lanes":    "Lanes",
+    "about":    "About"
+  },
+  "lang": {
+    "picker_heading":  "Choose your language",
+    "remember":        "We'll remember your choice on this device.",
+    "switch_to_af":    "Skakel oor na Afrikaans",
+    "switch_to_en":    "Switch to English"
+  },
+  "timeline": {
+    "drag_to_pan":  "Drag to pan",
+    "arrow_step":   "Arrow keys to step",
+    "enter_open":   "Enter to open",
+    "more_n":       "+{n} more"
+  },
+  "entry": {
+    "open":        "Open entry",
+    "favourite":   "Add to favourites",
+    "unfavourite": "Remove from favourites",
+    "translation_pending": "Afrikaans translation pending review"
+  },
+  "search": {
+    "placeholder": "Search…",
+    "also_af":     "Search Afrikaans too →"
+  },
+  "era": {
+    "all_history": "All history"
+  },
+  "footer": {
+    "phase": "v0.1 · Phase 1",
+    "about": "About"
+  }
+}

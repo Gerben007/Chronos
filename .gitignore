@@ -1,0 +1,42 @@
+# Env / secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Node / Astro
+node_modules/
+.astro/
+dist/
+.output/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# SQLite runtime artefacts
+db/chronos.db
+db/chronos.db-wal
+db/chronos.db-shm
+db/backups/*.gpg
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Coverage / build
+coverage/
+.nyc_output/

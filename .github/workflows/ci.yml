@@ -1,0 +1,59 @@
+name: ci
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  site:
+    name: site (Astro)
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/site } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: apps/site/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run validate-schema --if-present
+      - run: npm run check --if-present
+      # - run: npm run build           # enabled once components exist
+      - name: npm audit (fail on high+)
+        run: npm audit --omit=dev --audit-level=high
+
+  ingest:
+    name: ingest (Python)
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/ingest } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - run: pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - run: ruff check .
+      - run: mypy chronos_ingest
+      - run: pytest --no-header --quiet
+      - name: pip-audit (strict)
+        run: pip-audit --strict
+
+  schema:
+    name: db schema applies cleanly
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: apply migrations + seed against scratch sqlite
+        run: |
+          sqlite3 /tmp/chronos.db < db/migrations/0001_init.sql
+          sqlite3 /tmp/chronos.db < db/seed/lanes.sql
+          sqlite3 /tmp/chronos.db "SELECT count(*) FROM lanes;" | grep -q '^7$'

@@ -1,0 +1,58 @@
+[project]
+name = "chronos-ingest"
+version = "0.1.0"
+description = "Chronos ingest pipeline: Nextcloud → ClamAV → Haiku → SQLite"
+requires-python = ">=3.11"
+readme = "README.md"
+license = { text = "Proprietary" }
+dependencies = [
+  "anthropic>=0.45.0",
+  "pydantic>=2.9",
+  "pydantic-settings>=2.6",
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.32",
+  "httpx>=0.27",
+  "webdavclient3>=3.14.6",
+  "pdfplumber>=0.11",
+  "pikepdf>=9.4",
+  "pillow>=11.0",
+  "clamd>=1.0.2",
+  "pyjwt[crypto]>=2.9",
+  "python-multipart>=0.0.12",
+  "tenacity>=9.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3",
+  "pytest-asyncio>=0.24",
+  "ruff>=0.7",
+  "mypy>=1.13",
+  "pip-audit>=2.7",
+]
+
+[project.scripts]
+chronos-ingest = "chronos_ingest.main:cli"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["chronos_ingest*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S", "N"]
+ignore = ["S101"]  # allow asserts in tests
+
+[tool.mypy]
+strict = true
+python_version = "3.11"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
