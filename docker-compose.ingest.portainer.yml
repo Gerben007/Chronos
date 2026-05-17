@@ -51,6 +51,29 @@ services:
     labels:
       com.example.description: "Chronos ingest loop"
 
+  chronos-admin:
+    image: chronos-ingest:latest
+    container_name: chronos-admin
+    restart: unless-stopped
+    command:
+      - "uvicorn"
+      - "chronos_ingest.admin_api:app"
+      - "--host=0.0.0.0"
+      - "--port=8001"
+      - "--no-server-header"
+    environment:
+      - SQLITE_PATH=/data/db/chronos.db
+      - CF_ACCESS_TEAM=${CF_ACCESS_TEAM}
+      - CF_ACCESS_AUD=${CF_ACCESS_AUD}
+      - RESOURCES_OUTPUT_PATH=/data/dist/resources.json
+    volumes:
+      - chronos-db:/data/db
+      - chronos-dist-data:/data/dist
+    networks:
+      - nginx_default
+    labels:
+      com.example.description: "Chronos admin API (FastAPI, CF Access-gated)"
+
 volumes:
   chronos-db:
   chronos-dist-data:
