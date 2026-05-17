@@ -67,6 +67,20 @@ class Settings(BaseSettings):
     # at /app/dist/data so the file is served at /data/resources.json.
     resources_output_path: Path = Path("/data/dist/resources.json")
 
+    # ── Excel-driven entries authoring ───────────────────────────────
+    # Filename (within nextcloud_root_path) the parents edit. When this
+    # file changes the loop overwrites entries_json_path and triggers
+    # a site rebuild.
+    entries_xlsx_name: str = "entries.xlsx"
+    entries_json_path: Path = Path("/repo/db/seed/entries.json")
+    lanes_json_path:   Path = Path("/repo/db/seed/lanes.json")
+    # Image rebuild knobs. Set site_image_name to enable auto-rebuild
+    # after entries.xlsx changes. Requires /var/run/docker.sock mounted.
+    site_image_name: str = ""             # e.g. "chronos:latest"
+    site_dockerfile_path: str = "apps/site/Dockerfile"
+    site_container_name: str = "chronos-site"
+    repo_path: Path = Path("/repo")
+
     # ── File scanning ─────────────────────────────────────────────────
     clamav_socket: Path = Path("/var/run/clamav/clamd.sock")
     # Set true ONLY in dev or when scanning is provided out-of-band. In

@@ -74,10 +74,23 @@ services:
       - CLAMAV_SOCKET=/clamav-socket/clamd.sock
       - TICK_INTERVAL_SECONDS=60
       - RESOURCES_OUTPUT_PATH=/data/dist/resources.json
+      # Excel-driven entries authoring (drop entries.xlsx in /Chronos/).
+      - ENTRIES_XLSX_NAME=entries.xlsx
+      - ENTRIES_JSON_PATH=/repo/db/seed/entries.json
+      - LANES_JSON_PATH=/repo/db/seed/lanes.json
+      - REPO_PATH=/repo
+      # Set SITE_IMAGE_NAME to enable auto-rebuild on entries change.
+      - SITE_IMAGE_NAME=${SITE_IMAGE_NAME:-chronos:latest}
+      - SITE_DOCKERFILE_PATH=apps/site/Dockerfile
+      - SITE_CONTAINER_NAME=chronos-site
     volumes:
       - chronos-db:/data/db
       - chronos-dist-data:/data/dist
       - clamav-socket:/clamav-socket           # clamd.sock is read+write
+      # Repo bind-mount so we can read seed/entries.json and run docker build.
+      - ${CHRONOS_REPO_PATH:-/home/gerben/chronos-deploy/chronos}:/repo
+      # Docker socket for image rebuild + container recreate.
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - nginx_default
     labels:

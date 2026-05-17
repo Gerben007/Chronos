@@ -42,8 +42,19 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from typing import Any
 
-from chronos_ingest import budget, classify, db, extract, rebuild, scan, translate
+from chronos_ingest import (
+    budget,
+    classify,
+    db,
+    excel_entries,
+    extract,
+    rebuild,
+    rebuild_site,
+    scan,
+    translate,
+)
 from chronos_ingest.config import Settings, get_settings
 from chronos_ingest.nextcloud import (
     NextcloudClient,
@@ -244,6 +255,7 @@ def run_tick(settings: Settings, *, anthropic_client: object | None = None) -> d
         "quarantined": 0,
         "failed": 0,
         "skipped": 0,
+        "entries_changed": 0,
     }
     with (
         NextcloudClient(
@@ -254,6 +266,16 @@ def run_tick(settings: Settings, *, anthropic_client: object | None = None) -> d
         tempfile.TemporaryDirectory(prefix="chronos-ingest-") as tmp,
     ):
         scratch = Path(tmp)
+
+        # Excel-driven entries sync — runs first so any rebuild triggered
+        # below picks up the same iteration's data.
+        try:
+            if sync_entries_from_xlsx(settings, nc=nc, scratch_dir=scratch):
+                counts["entries_changed"] = 1
+                _trigger_site_rebuild(settings)
+        except Exception:  # noqa: BLE001
+            log.exception("xlsx sync failed")
+
         try:
             files = nc.list_tree(settings.nextcloud_root_path)
         except Exception:  # noqa: BLE001
@@ -295,6 +317,56 @@ def run_tick(settings: Settings, *, anthropic_client: object | None = None) -> d
                 continue
             counts[status] = counts.get(status, 0) + 1
     return counts
+
+
+def sync_entries_from_xlsx(
+    settings: Settings, *, nc: NextcloudClient, scratch_dir: Path
+) -> bool:
+    """Pulls the authoring Excel from Nextcloud and updates entries.json.
+
+    Returns True if entries.json was changed (and the site needs a rebuild).
+    """
+    if not settings.entries_json_path.parent.exists():
+        log.info("entries_json_path parent missing — repo not mounted; skipping xlsx sync")
+        return False
+
+    remote_path = f"{settings.nextcloud_root_path.rstrip('/')}/{settings.entries_xlsx_name}"
+    local = scratch_dir / settings.entries_xlsx_name
+    try:
+        nc.download_to_path(remote_path, local)
+    except Exception:  # noqa: BLE001
+        # No file yet, or transient WebDAV error — leave entries.json alone.
+        log.debug("no entries.xlsx in Nextcloud at %s", remote_path)
+        return False
+
+    import json
+    lanes_data: list[dict[str, Any]] = []
+    if settings.lanes_json_path.exists():
+        lanes_data = json.loads(settings.lanes_json_path.read_text(encoding="utf-8"))
+    valid_lanes = {l["slug"] for l in lanes_data}
+    if not valid_lanes:
+        log.warning("no valid lanes — skipping xlsx sync")
+        return False
+
+    result = excel_entries.parse_xlsx(local, valid_lanes=valid_lanes)
+    if result.errors:
+        for e in result.errors:
+            log.warning("entries.xlsx: %s", e)
+        if not result.entries:
+            log.error("entries.xlsx had errors and no usable rows; not overwriting entries.json")
+            return False
+
+    new_blob = json.dumps(result.entries, indent=2, ensure_ascii=False)
+    if settings.entries_json_path.exists():
+        old_blob = settings.entries_json_path.read_text(encoding="utf-8")
+        if old_blob.strip() == new_blob.strip():
+            return False
+    settings.entries_json_path.write_text(new_blob + "\n", encoding="utf-8")
+    log.info(
+        "entries.json updated from xlsx: %d entries (%d skipped due to errors)",
+        len(result.entries), len(result.errors),
+    )
+    return True
 
 
 def _maybe_rebuild_resources(settings: Settings, processed_count: int) -> None:
@@ -424,6 +496,21 @@ def run_translate_drafts(
     return counts
 
 
+def _trigger_site_rebuild(settings: Settings) -> None:
+    if not settings.site_image_name:
+        log.info("entries changed; site rebuild skipped (SITE_IMAGE_NAME unset)")
+        return
+    try:
+        rebuild_site.rebuild_site_image(
+            image_name=settings.site_image_name,
+            dockerfile_path=settings.site_dockerfile_path,
+            repo_path=settings.repo_path,
+            container_name=settings.site_container_name,
+        )
+    except rebuild_site.RebuildError:
+        log.exception("site rebuild failed")
+
+
 def _build_anthropic_client(settings: Settings) -> object | None:
     if not settings.anthropic_api_key:
         return None
@@ -439,9 +526,13 @@ def cli(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="chronos-ingest")
     parser.add_argument(
         "command",
-        choices=["tick", "loop", "list", "translate"],
-        help="tick=single pass; loop=forever poll; list=preview tree; translate=draft AF",
+        choices=["tick", "loop", "list", "translate", "xlsx-export"],
+        help=(
+            "tick=single pass; loop=forever poll; list=preview tree; "
+            "translate=draft AF; xlsx-export=write entries.xlsx template from current entries.json"
+        ),
     )
+    parser.add_argument("--out", type=Path, help="output path for xlsx-export")
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args(argv)
 
@@ -475,6 +566,14 @@ def cli(argv: list[str] | None = None) -> int:
             return 1
         counts = run_translate_drafts(settings, anthropic_client=client)
         log.info("translate complete: %s", counts)
+        return 0
+
+    if args.command == "xlsx-export":
+        import json
+        entries = json.loads(settings.entries_json_path.read_text(encoding="utf-8"))
+        out = args.out or Path("/tmp/entries.xlsx")
+        excel_entries.export_xlsx(entries, out)
+        log.info("xlsx-export wrote %d entries to %s", len(entries), out)
         return 0
 
     counts = run_tick(settings, anthropic_client=client)
