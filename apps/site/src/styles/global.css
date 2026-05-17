@@ -2,32 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Self-host Lora + Inter to honour the strict CSP (no third-party domains).
-   The actual woff2 files live in /public/fonts/ and are added in the deploy
-   pipeline; @font-face stubs below are inert until those files exist. */
-
-@font-face {
-  font-family: 'Lora';
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url('/fonts/Lora-Variable.woff2') format('woff2-variations');
-}
-@font-face {
-  font-family: 'Lora';
-  font-style: italic;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url('/fonts/Lora-Italic-Variable.woff2') format('woff2-variations');
-}
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url('/fonts/Inter-Variable.woff2') format('woff2-variations');
-}
-
 /* ── App-level chrome ────────────────────────────────────────────────────── */
 
 html {
