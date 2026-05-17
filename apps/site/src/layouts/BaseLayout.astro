@@ -1,6 +1,7 @@
 ---
 import '../styles/tokens.css';
 import '../styles/global.css';
+import '../styles/tv-mode.css';
 import { type Lang, LANGS } from '../lib/types';
 import { t, otherLang } from '../lib/i18n';
 import LangSwitch from '../components/lang/LangSwitch.astro';
@@ -8,7 +9,7 @@ import LangSwitch from '../components/lang/LangSwitch.astro';
 interface Props {
   lang: Lang;
   title?: string;
-  pageKey?: 'timeline' | 'eras' | 'lanes' | 'about' | 'home';
+  pageKey?: 'timeline' | 'eras' | 'lanes' | 'tv' | 'about' | 'home';
   /** When true, the chrome (header + footer) is omitted. */
   bare?: boolean;
 }
@@ -31,6 +32,24 @@ const altLang = otherLang(lang);
       <link rel="alternate" hreflang={l} href={`/${l}${Astro.url.pathname.replace(/^\/(en|af)/, '')}`} />
     ))}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script is:inline>
+      // TV-mode auto-trigger: ?tv=1 OR localStorage.tvMode='true' OR
+      // (viewport ≥1280 + pointer:coarse) — matches docs/design-brief spec.
+      // Runs before paint to avoid a flash of non-TV chrome.
+      (function () {
+        try {
+          const u = new URL(location.href);
+          const param = u.searchParams.get('tv');
+          if (param === '1') localStorage.setItem('tvMode', 'true');
+          if (param === '0') localStorage.removeItem('tvMode');
+          const saved = localStorage.getItem('tvMode') === 'true';
+          const viewportHints = matchMedia('(min-width: 1280px) and (pointer: coarse)').matches;
+          if (saved || param === '1' || viewportHints) {
+            document.documentElement.classList.add('tv');
+          }
+        } catch (_) { /* private mode etc. */ }
+      })();
+    </script>
   </head>
   <body class="bg-paper text-ink-2 font-serif antialiased">
     {!bare && (
