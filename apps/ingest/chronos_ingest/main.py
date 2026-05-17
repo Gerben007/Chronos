@@ -43,7 +43,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from chronos_ingest import budget, classify, db, extract, rebuild, scan
+from chronos_ingest import budget, classify, db, extract, rebuild, scan, translate
 from chronos_ingest.config import Settings, get_settings
 from chronos_ingest.nextcloud import (
     NextcloudClient,
@@ -336,6 +336,94 @@ def run_loop(settings: Settings, *, anthropic_client: object | None = None) -> N
         time.sleep(interval)
 
 
+def run_translate_drafts(
+    settings: Settings, *, anthropic_client: object, target_lang: str = "af"
+) -> dict[str, int]:
+    """Generates AI Afrikaans drafts for entries missing that translation.
+
+    Reads the corresponding wiki Markdown from the repo content collection
+    when present. Resulting drafts land in entry_translations with
+    translation_status='ai_draft'. Existing reviewed/published rows are
+    never overwritten.
+
+    Returns counts: {drafted, skipped, failed}.
+    """
+    if target_lang not in ("en", "af"):
+        raise ValueError("target_lang must be 'en' or 'af'")
+
+    source_lang = "en" if target_lang == "af" else "af"
+    wiki_root = Path("/app/wiki") if Path("/app/wiki").is_dir() else None
+    counts = {"drafted": 0, "skipped": 0, "failed": 0}
+
+    with db.connect(settings.sqlite_path) as conn:
+        rows = conn.execute(
+            """
+            SELECT e.id, e.slug,
+                   src.title   AS src_title,
+                   src.summary AS src_summary,
+                   src.wiki_md AS src_wiki_md
+            FROM entries e
+            JOIN entry_translations src
+              ON src.entry_id = e.id AND src.lang = ?
+            LEFT JOIN entry_translations tgt
+              ON tgt.entry_id = e.id AND tgt.lang = ?
+            WHERE tgt.entry_id IS NULL
+               OR tgt.translation_status = 'ai_draft'
+            """,
+            (source_lang, target_lang),
+        ).fetchall()
+
+    for r in rows:
+        if not budget.may_call(
+            settings.sqlite_path, ESTIMATED_CALL_COST_USD, settings.daily_haiku_budget_usd
+        ):
+            log.warning("budget hit during translation drafts")
+            break
+
+        # Pull wiki Markdown from disk if it exists (admin reviewed copies
+        # land here when the build pipeline writes them).
+        wiki_md_src = r["src_wiki_md"]
+        if wiki_root and not wiki_md_src:
+            candidate = wiki_root / source_lang / f"{r['slug']}.md"
+            if candidate.exists():
+                wiki_md_src = candidate.read_text(encoding="utf-8")
+
+        try:
+            draft = translate.translate_entry(
+                anthropic_client=anthropic_client,
+                model=settings.anthropic_model,
+                title_en=r["src_title"] if source_lang == "en" else "",
+                summary_en=r["src_summary"] if source_lang == "en" else "",
+                wiki_md_en=wiki_md_src,
+            )
+        except Exception:  # noqa: BLE001
+            log.exception("translate failed for %s", r["slug"])
+            counts["failed"] += 1
+            continue
+
+        budget.record(
+            settings.sqlite_path,
+            input_tokens=draft.input_tokens,
+            output_tokens=draft.output_tokens,
+            cost_usd=(draft.input_tokens / 1e6) * 0.80 + (draft.output_tokens / 1e6) * 4.00,
+        )
+
+        with db.connect(settings.sqlite_path) as conn, db.transaction(conn):
+            db.upsert_ai_draft_translation(
+                conn,
+                entry_id=int(r["id"]),
+                lang=target_lang,
+                title=draft.title_af,
+                summary=draft.summary_af,
+                wiki_md=draft.wiki_md_af,
+                source_lang=source_lang,
+            )
+        counts["drafted"] += 1
+        log.info("drafted %s → %s", r["slug"], target_lang)
+
+    return counts
+
+
 def _build_anthropic_client(settings: Settings) -> object | None:
     if not settings.anthropic_api_key:
         return None
@@ -351,8 +439,8 @@ def cli(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="chronos-ingest")
     parser.add_argument(
         "command",
-        choices=["tick", "loop", "list"],
-        help="tick=single pass; loop=forever poll; list=preview tree",
+        choices=["tick", "loop", "list", "translate"],
+        help="tick=single pass; loop=forever poll; list=preview tree; translate=draft AF",
     )
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args(argv)
@@ -379,6 +467,14 @@ def cli(argv: list[str] | None = None) -> int:
     client = _build_anthropic_client(settings)
     if args.command == "loop":
         run_loop(settings, anthropic_client=client)
+        return 0
+
+    if args.command == "translate":
+        if client is None:
+            log.error("ANTHROPIC_API_KEY required for translate")
+            return 1
+        counts = run_translate_drafts(settings, anthropic_client=client)
+        log.info("translate complete: %s", counts)
         return 0
 
     counts = run_tick(settings, anthropic_client=client)

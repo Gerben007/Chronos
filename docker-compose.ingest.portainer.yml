@@ -26,11 +26,38 @@ version: '3.8'
 # TICK_INTERVAL_SECONDS).
 
 services:
+  clamav:
+    image: clamav/clamav:latest
+    container_name: chronos-clamav
+    restart: unless-stopped
+    # Freshclam runs on startup; first boot pulls signatures (~5 min).
+    # Subsequent restarts use the cached DB. The clamd socket lives at
+    # /tmp/clamd.sock by default; we expose it via a shared volume.
+    environment:
+      - CLAMAV_NO_FRESHCLAMD=false
+      - CLAMD_STARTUP_TIMEOUT=600
+    volumes:
+      - clamav-db:/var/lib/clamav
+      - clamav-socket:/tmp                  # exposes clamd.sock
+    healthcheck:
+      test: ["CMD", "clamdcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 360s                    # allow time for first signature pull
+    networks:
+      - nginx_default
+    labels:
+      com.example.description: "Chronos ClamAV scanner"
+
   chronos-ingest:
     image: chronos-ingest:latest
     container_name: chronos-ingest
     restart: unless-stopped
     command: ["python", "-m", "chronos_ingest", "loop", "-v"]
+    depends_on:
+      clamav:
+        condition: service_started        # service_healthy needs ~6 min first run
     environment:
       - NEXTCLOUD_URL=${NEXTCLOUD_URL}
       - NEXTCLOUD_USER=${NEXTCLOUD_USER}
@@ -40,12 +67,17 @@ services:
       - ANTHROPIC_MODEL=claude-haiku-4-5-20251001
       - DAILY_HAIKU_BUDGET_USD=1.00
       - SQLITE_PATH=/data/db/chronos.db
-      - SKIP_VIRUS_SCAN=${SKIP_VIRUS_SCAN:-true}
+      # SKIP_VIRUS_SCAN: true while ClamAV is warming up (~5 min first run),
+      # then flip to false. The ingest loop fails closed if clamd is
+      # unreachable while SKIP_VIRUS_SCAN=false.
+      - SKIP_VIRUS_SCAN=${SKIP_VIRUS_SCAN:-false}
+      - CLAMAV_SOCKET=/clamav-socket/clamd.sock
       - TICK_INTERVAL_SECONDS=60
       - RESOURCES_OUTPUT_PATH=/data/dist/resources.json
     volumes:
       - chronos-db:/data/db
       - chronos-dist-data:/data/dist
+      - clamav-socket:/clamav-socket           # clamd.sock is read+write
     networks:
       - nginx_default
     labels:
@@ -81,6 +113,8 @@ services:
 volumes:
   chronos-db:
   chronos-dist-data:
+  clamav-db:
+  clamav-socket:
 
 networks:
   nginx_default:
