@@ -44,3 +44,21 @@ export type Entry = z.infer<typeof Entry>;
 
 export const LanesFile = z.array(Lane);
 export const EntriesFile = z.array(Entry);
+
+export const Resource = z.object({
+  file_id: z.number().int(),
+  title: z.string(),
+  file_type: z.enum(['pdf', 'video', 'audio', 'image', 'doc']),
+  public_url: z.string().url(),
+  summary_en: z.string().nullable(),
+  summary_af: z.string().nullable(),
+  cc_cycle: z.number().int().nullable(),
+  cc_week: z.number().int().nullable(),
+  age_min: z.number().int().nullable(),
+  age_max: z.number().int().nullable(),
+  confidence: z.number(),
+  needs_review: z.boolean(),
+});
+export type Resource = z.infer<typeof Resource>;
+
+export const ResourcesFile = z.record(z.string(), z.array(Resource));
