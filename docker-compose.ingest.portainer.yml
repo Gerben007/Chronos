@@ -41,7 +41,7 @@ services:
       - DAILY_HAIKU_BUDGET_USD=1.00
       - SQLITE_PATH=/data/db/chronos.db
       - SKIP_VIRUS_SCAN=${SKIP_VIRUS_SCAN:-true}
-      - TICK_INTERVAL_SECONDS=900
+      - TICK_INTERVAL_SECONDS=60
       - RESOURCES_OUTPUT_PATH=/data/dist/resources.json
     volumes:
       - chronos-db:/data/db
