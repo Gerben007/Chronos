@@ -272,9 +272,15 @@ def run_tick(settings: Settings, *, anthropic_client: object | None = None) -> d
         try:
             if sync_entries_from_xlsx(settings, nc=nc, scratch_dir=scratch):
                 counts["entries_changed"] = 1
-                _trigger_site_rebuild(settings)
         except Exception:  # noqa: BLE001
             log.exception("xlsx sync failed")
+
+        # Trigger a rebuild whenever entries.json is newer than the last
+        # successful build sentinel — this retries silently if a previous
+        # rebuild failed, instead of getting stuck until the user edits
+        # the xlsx again.
+        if _needs_site_rebuild(settings):
+            _trigger_site_rebuild(settings)
 
         try:
             files = nc.list_tree(settings.nextcloud_root_path)
@@ -509,6 +515,30 @@ def _trigger_site_rebuild(settings: Settings) -> None:
         )
     except rebuild_site.RebuildError:
         log.exception("site rebuild failed")
+        return
+    # Sentinel records a successful build; next tick uses mtime comparison
+    # to decide whether another rebuild is needed.
+    _sentinel(settings).touch()
+
+
+def _sentinel(settings: Settings) -> Path:
+    return settings.entries_json_path.parent / ".last-rebuilt"
+
+
+def _needs_site_rebuild(settings: Settings) -> bool:
+    """True if entries.json is newer than the last successful rebuild.
+
+    Self-heals from a failed build: as long as entries.json is newer
+    than the sentinel (or the sentinel doesn't exist yet), every tick
+    will retry until the image actually goes out.
+    """
+    entries_json = settings.entries_json_path
+    if not entries_json.exists():
+        return False
+    sentinel = _sentinel(settings)
+    if not sentinel.exists():
+        return True
+    return entries_json.stat().st_mtime > sentinel.stat().st_mtime
 
 
 def _build_anthropic_client(settings: Settings) -> object | None:
