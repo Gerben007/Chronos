@@ -305,11 +305,16 @@ def _maybe_rebuild_resources(settings: Settings, processed_count: int) -> None:
 def run_loop(settings: Settings, *, anthropic_client: object | None = None) -> None:
     """Forever-loop: tick, rebuild, sleep. Designed to be the container's PID 1.
 
+    On startup, force a rebuild so resources.json reflects whatever's
+    already in the DB (covers the case where prior ticks processed files
+    but the rebuild step failed and now no fresh files come in to retrigger it).
+
     No signal handling — letting docker stop send SIGTERM is enough; the loop
     interrupts at the next sleep boundary.
     """
     interval = max(60, int(settings.tick_interval_seconds))
     log.info("loop mode starting (interval=%ds)", interval)
+    _maybe_rebuild_resources(settings, processed_count=1)  # force initial run
     while True:
         try:
             counts = run_tick(settings, anthropic_client=anthropic_client)
