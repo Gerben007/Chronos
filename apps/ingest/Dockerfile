@@ -1,29 +1,28 @@
 # Chronos ingest — Python 3.11 on Debian slim.
 # Multi-stage so the runtime image carries no build tooling.
-# Pinned by digest in production compose; local builds may use the tag.
 
-FROM python:3.11-slim-bookworm@sha256:REPLACE_WITH_DIGEST AS build
+FROM python:3.11-slim-bookworm AS build
 WORKDIR /build
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      build-essential libpq-dev libjpeg-dev zlib1g-dev libxml2-dev libxslt1-dev \
-      ffmpeg poppler-utils \
+      build-essential libjpeg-dev zlib1g-dev libxml2-dev libxslt1-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml ./
+COPY chronos_ingest ./chronos_ingest
 RUN pip install --no-cache-dir --upgrade pip wheel && \
     pip wheel --no-cache-dir --wheel-dir=/wheels .
 
 # ─────────────────────────────────────────────────────────────────────────────
-FROM python:3.11-slim-bookworm@sha256:REPLACE_WITH_DIGEST AS runtime
+FROM python:3.11-slim-bookworm AS runtime
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ffmpeg poppler-utils libjpeg62-turbo zlib1g \
+      ffmpeg poppler-utils libjpeg62-turbo zlib1g clamav-daemon \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd -g 1000 chronos \
     && useradd -u 1000 -g 1000 -m -s /usr/sbin/nologin chronos
 
 COPY --from=build /wheels /wheels
-RUN pip install --no-cache-dir --no-index --find-links=/wheels chronos-ingest \
+RUN pip install --no-cache-dir --find-links=/wheels chronos-ingest \
     && rm -rf /wheels
 
 WORKDIR /app
