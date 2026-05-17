@@ -31,10 +31,13 @@ RUN pip install --no-cache-dir --find-links=/wheels chronos-ingest \
 WORKDIR /app
 COPY --chown=chronos:chronos apps/ingest/chronos_ingest /app/chronos_ingest
 COPY --chown=chronos:chronos db /app/db
+COPY apps/ingest/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-USER 1000:1000
+# Stay root so the entrypoint can chown the data volumes; it drops to 1000.
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 EXPOSE 8001
+ENTRYPOINT ["/entrypoint.sh"]
 
 # Default: run the FastAPI admin API. Override CMD in compose for cron mode.
 CMD ["uvicorn", "chronos_ingest.admin_api:app", \
