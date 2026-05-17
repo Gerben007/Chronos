@@ -55,6 +55,12 @@ class Settings(BaseSettings):
     webhook_hmac_secret: str = Field(default="")
     webhook_max_age_seconds: int = 300
 
+    # ── Loop mode ────────────────────────────────────────────────────
+    tick_interval_seconds: int = 900     # 15 min default per PLAN
+    # Where rebuild.py writes resources.json. Site mounts the same volume
+    # at /app/dist/data so the file is served at /data/resources.json.
+    resources_output_path: Path = Path("/data/dist/resources.json")
+
     # ── File scanning ─────────────────────────────────────────────────
     clamav_socket: Path = Path("/var/run/clamav/clamd.sock")
     # Set true ONLY in dev or when scanning is provided out-of-band. In

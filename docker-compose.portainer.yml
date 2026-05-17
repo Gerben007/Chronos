@@ -1,16 +1,32 @@
 version: '3.8'
 
+# Chronos public site. Serves the static Astro build on port 3000 (mapped
+# to host 3003 to avoid OpenWebUI). Mounts the shared `chronos-dist-data`
+# volume at /app/dist/data so the ingest container's resources.json is
+# served at https://chronos.stratusfinance.co.za/data/resources.json — and
+# the entry pages pick it up at runtime via /js/resources-live.js.
+
 services:
   chronos:
-    build:
-      context: https://github.com/gerben007/chronos.git#claude/new-session-5fOED
-      dockerfile: apps/site/Dockerfile
+    image: chronos:latest
     container_name: chronos-site
     ports:
-      - "3000:3000"
+      - "3003:3000"
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - SITE_BASE_URL=https://chronos.internal
+      - SITE_BASE_URL=https://chronos.stratusfinance.co.za
+    volumes:
+      - chronos-dist-data:/app/dist/data:ro
+    networks:
+      - nginx_default
     labels:
       com.example.description: "Chronos timeline site"
+
+volumes:
+  chronos-dist-data:
+    external: true                 # created by the ingest stack
+
+networks:
+  nginx_default:
+    external: true

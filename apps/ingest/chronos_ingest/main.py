@@ -40,9 +40,10 @@ import argparse
 import logging
 import sys
 import tempfile
+import time
 from pathlib import Path
 
-from chronos_ingest import budget, classify, db, extract, scan
+from chronos_ingest import budget, classify, db, extract, rebuild, scan
 from chronos_ingest.config import Settings, get_settings
 from chronos_ingest.nextcloud import (
     NextcloudClient,
@@ -285,6 +286,40 @@ def run_tick(settings: Settings, *, anthropic_client: object | None = None) -> d
     return counts
 
 
+def _maybe_rebuild_resources(settings: Settings, processed_count: int) -> None:
+    """Re-exports resources.json if the tick processed at least one file."""
+    if processed_count <= 0:
+        return
+    try:
+        data = rebuild.export_resources(settings.sqlite_path)
+        out = settings.resources_output_path
+        out.parent.mkdir(parents=True, exist_ok=True)
+        import json as _json
+        out.write_text(_json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+        total = sum(len(v) for v in data.values())
+        log.info("rebuild: %d resources across %d entries → %s", total, len(data), out)
+    except Exception:  # noqa: BLE001
+        log.exception("rebuild step failed")
+
+
+def run_loop(settings: Settings, *, anthropic_client: object | None = None) -> None:
+    """Forever-loop: tick, rebuild, sleep. Designed to be the container's PID 1.
+
+    No signal handling — letting docker stop send SIGTERM is enough; the loop
+    interrupts at the next sleep boundary.
+    """
+    interval = max(60, int(settings.tick_interval_seconds))
+    log.info("loop mode starting (interval=%ds)", interval)
+    while True:
+        try:
+            counts = run_tick(settings, anthropic_client=anthropic_client)
+            log.info("tick complete: %s", counts)
+            _maybe_rebuild_resources(settings, counts.get("processed", 0))
+        except Exception:  # noqa: BLE001
+            log.exception("tick failed; will retry next interval")
+        time.sleep(interval)
+
+
 def _build_anthropic_client(settings: Settings) -> object | None:
     if not settings.anthropic_api_key:
         return None
@@ -299,7 +334,9 @@ def _build_anthropic_client(settings: Settings) -> object | None:
 def cli(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="chronos-ingest")
     parser.add_argument(
-        "command", choices=["tick", "list"], help="tick=process tree, list=preview"
+        "command",
+        choices=["tick", "loop", "list"],
+        help="tick=single pass; loop=forever poll; list=preview tree",
     )
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args(argv)
@@ -323,8 +360,14 @@ def cli(argv: list[str] | None = None) -> int:
                 print(f"{f.path}\t{f.size}\t{hint}")
         return 0
 
-    counts = run_tick(settings, anthropic_client=_build_anthropic_client(settings))
+    client = _build_anthropic_client(settings)
+    if args.command == "loop":
+        run_loop(settings, anthropic_client=client)
+        return 0
+
+    counts = run_tick(settings, anthropic_client=client)
     log.info("tick complete: %s", counts)
+    _maybe_rebuild_resources(settings, counts.get("processed", 0))
     return 0
 
 

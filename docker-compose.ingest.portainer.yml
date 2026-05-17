@@ -1,31 +1,36 @@
 version: '3.8'
 
-# Chronos ingest stack — deploys the file-pipeline service.
+# Chronos ingest stack — runs the cron-style loop that polls Nextcloud,
+# classifies files via Haiku, and refreshes the public resources.json.
 #
-# Build the image once on the host (note: build context is the repo root):
+# Build the image once on the host (build context is the repo root):
 #   cd ~/chronos-deploy/chronos && \
 #   docker build -t chronos-ingest:latest -f apps/ingest/Dockerfile .
 #
-# Initialise the SQLite DB once (creates schema + seeds lanes/entries):
-#   docker run --rm -v chronos-db:/data/db chronos-ingest:latest \
-#     python -m chronos_ingest.seed --db /data/db/chronos.db
+# Initialise the SQLite DB once (run as root so the volume is writable):
+#   docker run --rm --user 0:0 -v chronos-db:/data/db chronos-ingest:latest \
+#     sh -c "chown -R 1000:1000 /data/db && \
+#            python -m chronos_ingest.seed --db /data/db/chronos.db && \
+#            chown -R 1000:1000 /data/db"
 #
-# Preview what the ingest will see in your Nextcloud (no writes):
-#   docker run --rm --env-file .env -v chronos-db:/data/db chronos-ingest:latest \
-#     python -m chronos_ingest list
+# Preview the tree (no writes, no AI):
+#   docker run --rm --env-file .env -v chronos-db:/data/db \
+#     chronos-ingest:latest python -m chronos_ingest list
 #
-# Run one tick manually:
-#   docker run --rm --env-file .env -v chronos-db:/data/db chronos-ingest:latest \
-#     python -m chronos_ingest tick
+# Run a one-shot tick:
+#   docker run --rm --env-file .env -v chronos-db:/data/db \
+#     -v chronos-dist-data:/data/dist chronos-ingest:latest \
+#     python -m chronos_ingest tick -v
 #
-# Deploy this stack via Portainer's web editor and set the secrets in the
-# Stack's env-vars panel (not in this file).
+# Deploy this stack via Portainer; it runs `loop` mode (auto-tick every
+# TICK_INTERVAL_SECONDS).
 
 services:
   chronos-ingest:
     image: chronos-ingest:latest
     container_name: chronos-ingest
     restart: unless-stopped
+    command: ["python", "-m", "chronos_ingest", "loop", "-v"]
     environment:
       - NEXTCLOUD_URL=${NEXTCLOUD_URL}
       - NEXTCLOUD_USER=${NEXTCLOUD_USER}
@@ -35,15 +40,20 @@ services:
       - ANTHROPIC_MODEL=claude-haiku-4-5-20251001
       - DAILY_HAIKU_BUDGET_USD=1.00
       - SQLITE_PATH=/data/db/chronos.db
+      - SKIP_VIRUS_SCAN=${SKIP_VIRUS_SCAN:-true}
+      - TICK_INTERVAL_SECONDS=900
+      - RESOURCES_OUTPUT_PATH=/data/dist/resources.json
     volumes:
       - chronos-db:/data/db
+      - chronos-dist-data:/data/dist
     networks:
       - nginx_default
     labels:
-      com.example.description: "Chronos ingest API + tick runner"
+      com.example.description: "Chronos ingest loop"
 
 volumes:
   chronos-db:
+  chronos-dist-data:
 
 networks:
   nginx_default:
