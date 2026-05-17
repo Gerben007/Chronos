@@ -63,8 +63,12 @@ services:
       - "--no-server-header"
     environment:
       - SQLITE_PATH=/data/db/chronos.db
-      - CF_ACCESS_TEAM=${CF_ACCESS_TEAM}
-      - CF_ACCESS_AUD=${CF_ACCESS_AUD}
+      # ADMIN_AUTH_MODE: 'cf_access' (production with Cloudflare in front)
+      # or 'none' (trust upstream proxy — pair with NPM Access List).
+      - ADMIN_AUTH_MODE=${ADMIN_AUTH_MODE:-none}
+      - ADMIN_PROXY_ACTOR=${ADMIN_PROXY_ACTOR:-gerben@local}
+      - CF_ACCESS_TEAM=${CF_ACCESS_TEAM:-}
+      - CF_ACCESS_AUD=${CF_ACCESS_AUD:-}
       - RESOURCES_OUTPUT_PATH=/data/dist/resources.json
     volumes:
       - chronos-db:/data/db

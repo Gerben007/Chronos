@@ -34,26 +34,44 @@ app = FastAPI(
 # ── Dependencies ──────────────────────────────────────────────────────
 
 
-def _verifier(settings: Annotated[Settings, Depends(get_settings)]) -> CfAccessVerifier:
+def require_admin(
+    settings: Annotated[Settings, Depends(get_settings)],
+    cf_access_jwt_assertion: Annotated[
+        str | None, Header(alias="Cf-Access-Jwt-Assertion")
+    ] = None,
+) -> VerifiedClaims:
+    """Gate every protected route.
+
+    Two modes (via ADMIN_AUTH_MODE):
+
+    - 'cf_access' (default, recommended for production with CF in front):
+      Verifies the Cf-Access-Jwt-Assertion header against Cloudflare's
+      JWKS on every request. We don't trust the proxy alone.
+
+    - 'none': the API trusts the upstream proxy to have already authed
+      the caller. Use only when sitting behind an NPM Access List
+      (HTTP Basic) or a LAN-only listener.
+    """
+    if settings.admin_auth_mode == "none":
+        return VerifiedClaims(
+            email=settings.admin_proxy_actor,
+            sub="proxy-trusted",
+            exp=0,
+        )
+
     if not settings.cf_access_team or not settings.cf_access_aud:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="CF Access not configured",
         )
-    return CfAccessVerifier(team=settings.cf_access_team, aud=settings.cf_access_aud)
-
-
-def require_admin(
-    cf_access_jwt_assertion: Annotated[
-        str | None, Header(alias="Cf-Access-Jwt-Assertion")
-    ] = None,
-    verifier: Annotated[CfAccessVerifier, Depends(_verifier)] = ...,  # type: ignore[assignment]
-) -> VerifiedClaims:
     if not cf_access_jwt_assertion:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="missing CF Access JWT",
         )
+    verifier = CfAccessVerifier(
+        team=settings.cf_access_team, aud=settings.cf_access_aud
+    )
     try:
         return verifier.verify(cf_access_jwt_assertion)
     except JwtVerifyError as e:

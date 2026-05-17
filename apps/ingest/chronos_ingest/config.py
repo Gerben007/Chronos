@@ -50,6 +50,12 @@ class Settings(BaseSettings):
     admin_api_bind: str = "0.0.0.0:8001"
     cf_access_team: str = Field(default="")
     cf_access_aud: str = Field(default="")
+    # 'cf_access' verifies the Cf-Access-Jwt-Assertion header (production
+    # default). 'none' trusts the proxy entirely — only safe behind an
+    # NPM Basic Auth access list or a LAN-only listener.
+    admin_auth_mode: str = "cf_access"
+    # Email recorded as the actor when admin_auth_mode='none'.
+    admin_proxy_actor: str = "proxy-trusted-admin"
 
     # ── Webhooks ──────────────────────────────────────────────────────
     webhook_hmac_secret: str = Field(default="")
