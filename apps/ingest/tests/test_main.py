@@ -130,7 +130,7 @@ _REMOTE = "/Chronos/Cycle 1/1. Foundations (Grammar Stage)/Week 5/abraham.pdf"
 def test_process_one_file_happy_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         scan, "scan_file",
-        lambda _p, *, clamav_socket: scan.ScanResult(result="clean", signatures=[], notes=""),
+        lambda _p, *, clamav_socket, skip=False: scan.ScanResult(result="clean", signatures=[], notes=""),
     )
 
     db_path = _make_db(tmp_path)
@@ -169,7 +169,7 @@ def test_idempotent_skip_already_processed(tmp_path: Path, monkeypatch: pytest.M
     """A second tick over the same file is a no-op."""
     monkeypatch.setattr(
         scan, "scan_file",
-        lambda _p, *, clamav_socket: scan.ScanResult(result="clean", signatures=[], notes=""),
+        lambda _p, *, clamav_socket, skip=False: scan.ScanResult(result="clean", signatures=[], notes=""),
     )
     db_path = _make_db(tmp_path)
     settings = _settings(db_path)
@@ -197,7 +197,7 @@ def test_idempotent_skip_already_processed(tmp_path: Path, monkeypatch: pytest.M
 def test_moderation_quarantine_no_move(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         scan, "scan_file",
-        lambda _p, *, clamav_socket: scan.ScanResult(result="clean", signatures=[], notes=""),
+        lambda _p, *, clamav_socket, skip=False: scan.ScanResult(result="clean", signatures=[], notes=""),
     )
     db_path = _make_db(tmp_path)
     settings = _settings(db_path)
@@ -226,7 +226,7 @@ def test_moderation_quarantine_no_move(tmp_path: Path, monkeypatch: pytest.Monke
 def test_scan_infected_quarantines(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         scan, "scan_file",
-        lambda _p, *, clamav_socket: scan.ScanResult(
+        lambda _p, *, clamav_socket, skip=False: scan.ScanResult(
             result="infected", signatures=["Eicar-Test-Signature"], notes="virus"
         ),
     )

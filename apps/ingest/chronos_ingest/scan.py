@@ -147,21 +147,25 @@ def reencode_image(path: Path) -> tuple[bool, str]:
 # ── Composite entry point ─────────────────────────────────────────────
 
 
-def scan_file(path: Path, *, clamav_socket: Path) -> ScanResult:
+def scan_file(path: Path, *, clamav_socket: Path, skip: bool = False) -> ScanResult:
     """Runs ClamAV, then PDF/image sanitisation as applicable.
 
     The order matters: never sanitise (and therefore read) a file
     ClamAV flagged as infected.
-    """
-    try:
-        is_clean, sigs, notes = clamav_scan(path, socket=clamav_socket)
-    except Exception as e:  # noqa: BLE001
-        return ScanResult(result="error", signatures=[], notes=f"{type(e).__name__}: {e}")
 
-    if not is_clean and sigs:
-        return ScanResult(result="infected", signatures=sigs, notes=notes)
-    if not is_clean:
-        return ScanResult(result="suspicious", signatures=[], notes=notes or "clamav unreachable")
+    `skip=True` bypasses ClamAV entirely. Use only in dev or when scans
+    happen out-of-band — production must keep this off.
+    """
+    if not skip:
+        try:
+            is_clean, sigs, notes = clamav_scan(path, socket=clamav_socket)
+        except Exception as e:  # noqa: BLE001
+            return ScanResult(result="error", signatures=[], notes=f"{type(e).__name__}: {e}")
+
+        if not is_clean and sigs:
+            return ScanResult(result="infected", signatures=sigs, notes=notes)
+        if not is_clean:
+            return ScanResult(result="suspicious", signatures=[], notes=notes or "clamav unreachable")
 
     suffix = path.suffix.lower()
     if suffix in SUPPORTED_PDF_SUFFIXES:

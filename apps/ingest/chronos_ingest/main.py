@@ -104,7 +104,11 @@ def process_one_file(
         return "failed"
 
     # Stage 1: scan + sanitise.
-    sresult = scan.scan_file(local, clamav_socket=settings.clamav_socket)
+    sresult = scan.scan_file(
+        local,
+        clamav_socket=settings.clamav_socket,
+        skip=settings.skip_virus_scan,
+    )
     with db.connect(settings.sqlite_path) as conn, db.transaction(conn):
         db.update_scan(
             conn,

@@ -57,6 +57,9 @@ class Settings(BaseSettings):
 
     # ── File scanning ─────────────────────────────────────────────────
     clamav_socket: Path = Path("/var/run/clamav/clamd.sock")
+    # Set true ONLY in dev or when scanning is provided out-of-band. In
+    # production with the official compose, clamav-daemon must be reachable.
+    skip_virus_scan: bool = False
 
 
 def get_settings() -> Settings:
