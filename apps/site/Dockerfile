@@ -2,20 +2,14 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files from site directory
-COPY apps/site/package.json apps/site/package-lock.json ./
-
-# Install dependencies
-RUN npm ci
-
-# Copy entire repo (needed for /db/seed/entries.json)
+# Copy entire repo (needed for /db/seed/entries.json and apps/site)
 COPY . .
 
-# Copy site source to working directory
-COPY apps/site ./
+# Install dependencies from apps/site
+RUN npm ci --prefix apps/site
 
-# Build static site
-RUN npm run build
+# Build static site from apps/site
+RUN npm run build --prefix apps/site
 
 # Runtime: serve static files with minimal HTTP server
 FROM node:20-alpine
@@ -26,7 +20,7 @@ WORKDIR /app
 RUN npm install -g serve
 
 # Copy built site from builder
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/apps/site/dist ./dist
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
