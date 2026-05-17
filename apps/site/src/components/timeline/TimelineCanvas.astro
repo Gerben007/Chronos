@@ -1,0 +1,257 @@
+---
+import type { Lang } from '../../lib/types';
+import { loadLanes, loadEntries } from '../../lib/data';
+import { t } from '../../lib/i18n';
+import type { TimelineConfig } from './timeline.client';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+
+const lanes = loadLanes();
+const entries = loadEntries();
+
+const config: TimelineConfig = {
+  lang,
+  lanes: lanes.map((l) => ({
+    slug: l.slug,
+    label: lang === 'af' && l.label_af ? l.label_af : l.label_en,
+    colour: l.colour,
+    colour_soft: l.colour_soft,
+    default_visible: l.default_visible,
+    base_layer: l.base_layer,
+  })),
+  entries: entries.map((e) => {
+    const tr = e.translations[lang] ?? e.translations.en;
+    return {
+      slug: e.slug,
+      lane_slug: e.lane_slug,
+      type: e.type,
+      start_year: e.start_year,
+      end_year: e.end_year,
+      importance: e.importance,
+      title: tr.title,
+      display_dates: tr.display_dates,
+    };
+  }),
+  // Eras (Phase 1 fixed set; will be data-driven once seed eras land).
+  eras: [
+    { slug: 'patriarchs',  label: lang === 'af' ? 'Aartsvaders'   : 'Patriarchs',  start_year: -2200, end_year: -1500 },
+    { slug: 'kingdoms',    label: lang === 'af' ? 'Konings'       : 'Kingdoms',    start_year: -1100, end_year: -500  },
+    { slug: 'christ',      label: lang === 'af' ? 'Christus'      : 'Christ',      start_year: -50,   end_year: 100   },
+    { slug: 'reformation', label: lang === 'af' ? 'Hervorming'    : 'Reformation', start_year: 1400,  end_year: 1700  },
+    { slug: 'all',         label: lang === 'af' ? 'Hele geskiedenis' : 'All history', start_year: -4100, end_year: 600 },
+  ],
+  defaultFrom: -2500,
+  defaultTo: 600,
+  minYear: -4100,
+  maxYear: 2100,
+};
+const configJson = JSON.stringify(config);
+
+const baseLayerVisible = lanes.filter((l) => l.base_layer);
+const toggleable = lanes.filter((l) => !l.base_layer);
+---
+
+<div class="ch-timeline-shell grid grid-cols-1 md:grid-cols-[240px_1fr] gap-4">
+  <!-- ── Sidebar ────────────────────────────────────────────────────────── -->
+  <aside class="md:border-r md:border-rule pr-4">
+    <p class="text-2xs font-sans uppercase tracking-[0.2em] text-ink-mute">
+      {lang === 'af' ? 'Bane' : 'Lanes'}
+    </p>
+    <ul class="mt-3 space-y-2">
+      {baseLayerVisible.map((l) => (
+        <li class="flex items-center gap-2.5">
+          <span class="inline-block h-3 w-3 rounded-sm" style={`background:${l.colour_soft};border:1px solid ${l.colour}`}></span>
+          <div class="flex-1">
+            <div class="font-serif text-sm text-ink">{lang === 'af' && l.label_af ? l.label_af : l.label_en}</div>
+            <div class="text-2xs italic text-ink-faint">{lang === 'af' ? 'altyd sigbaar' : 'always on'}</div>
+          </div>
+          <span class="text-ink-faint" aria-hidden="true">
+            <!-- lock glyph -->
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+          </span>
+        </li>
+      ))}
+      {toggleable.map((l) => (
+        <li>
+          <label class="flex items-center gap-2.5 cursor-pointer select-none">
+            <span class="inline-block h-3 w-3 rounded-sm" style={`background:${l.colour_soft};border:1px solid ${l.colour}`}></span>
+            <div class="flex-1">
+              <div class="font-serif text-sm text-ink">{lang === 'af' && l.label_af ? l.label_af : l.label_en}</div>
+              <div class="text-2xs italic text-ink-faint">{l.group_label}</div>
+            </div>
+            <input
+              type="checkbox"
+              data-lane-toggle
+              value={l.slug}
+              checked={l.default_visible}
+              class="h-4 w-4 accent-[color:var(--gold)]"
+              aria-label={`Toggle ${l.label_en}`}
+            />
+          </label>
+        </li>
+      ))}
+    </ul>
+  </aside>
+
+  <!-- ── Canvas + era jump row ──────────────────────────────────────────── -->
+  <div>
+    <div class="flex flex-wrap items-baseline gap-2 mb-3">
+      {config.eras.map((era) => (
+        <button
+          type="button"
+          data-era-jump
+          data-era-from={era.start_year.toString()}
+          data-era-to={era.end_year.toString()}
+          class="font-serif text-sm text-ink hover:text-gold border-b border-transparent hover:border-gold px-1 py-0.5 transition-colors"
+        >
+          {era.label}
+        </button>
+      ))}
+    </div>
+
+    <div id="ch-timeline" class="ch-canvas" data-config={configJson} aria-label={t(lang, 'nav.timeline')}></div>
+
+    <p class="mt-2 text-2xs font-sans uppercase tracking-widest text-ink-faint">
+      <span>{t(lang, 'timeline.drag_to_pan')}</span>
+      <span class="mx-2">·</span>
+      <span>{t(lang, 'timeline.arrow_step')}</span>
+      <span class="mx-2">·</span>
+      <span>{t(lang, 'timeline.enter_open')}</span>
+      <span class="mx-2">·</span>
+      <span>{lang === 'af' ? 'Ctrl + wieletjie om in te zoom' : 'Ctrl + scroll to zoom'}</span>
+    </p>
+  </div>
+</div>
+
+<script>
+  import { mountTimeline, type TimelineConfig } from './timeline.client';
+
+  const host = document.getElementById('ch-timeline');
+  if (host && host.dataset.config) {
+    const config = JSON.parse(host.dataset.config) as TimelineConfig;
+    mountTimeline(host, config);
+  }
+</script>
+
+<style is:global>
+  /* ── Timeline canvas — overrides vis-timeline defaults to match tokens ── */
+
+  .ch-canvas {
+    height: 560px;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  .ch-canvas .vis-timeline {
+    border: none;
+    font-family: var(--font-sans);
+    color: var(--ink-2);
+    background: var(--paper);
+  }
+  .ch-canvas .vis-panel.vis-top,
+  .ch-canvas .vis-panel.vis-bottom,
+  .ch-canvas .vis-panel.vis-left,
+  .ch-canvas .vis-panel.vis-right,
+  .ch-canvas .vis-panel.vis-center {
+    border-color: var(--rule-soft);
+  }
+  .ch-canvas .vis-time-axis .vis-text {
+    color: var(--ink-mute);
+    font-family: var(--font-sans);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding-top: 4px;
+  }
+  .ch-canvas .vis-time-axis .vis-grid.vis-minor {
+    border-color: rgba(205, 190, 153, 0.35);
+  }
+  .ch-canvas .vis-time-axis .vis-grid.vis-major {
+    border-color: var(--rule);
+  }
+  .ch-canvas .vis-labelset .vis-label {
+    color: var(--ink);
+    font-family: var(--font-serif);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  .ch-canvas .vis-foreground .vis-group {
+    border-bottom: 1px dashed var(--rule-soft);
+    background: transparent;
+  }
+  .ch-canvas .vis-current-time { display: none; }
+
+  /* ── Item base ──────────────────────────────────────────────────────── */
+  .ch-canvas .vis-item.ch-item {
+    border-width: 1px;
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+    font-family: var(--font-serif);
+    box-shadow: none;
+  }
+  .ch-canvas .vis-item.ch-item.vis-selected {
+    box-shadow: 0 0 0 2px var(--gold);
+  }
+  .ch-canvas .vis-item .ch-label {
+    display: block;
+    font-family: var(--font-serif);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.15;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 18ch;
+  }
+  .ch-canvas .vis-item .ch-date {
+    display: block;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 10px;
+    color: var(--ink-mute);
+    font-feature-settings: 'tnum' 1;
+  }
+
+  /* ── Point items (no end date) ──────────────────────────────────────── */
+  .ch-canvas .vis-item.ch-point.vis-point {
+    border: none;
+    background: transparent;
+  }
+  .ch-canvas .vis-item.ch-point .vis-dot {
+    width: 12px;
+    height: 12px;
+    background: var(--dot, var(--ink));
+    border: 2px solid var(--paper);
+    box-shadow: 0 0 0 1px var(--dot, var(--ink));
+  }
+  .ch-canvas .vis-item.ch-point.ch-importance-5 .vis-dot {
+    box-shadow: 0 0 0 1px var(--dot, var(--ink)), 0 0 0 3px var(--gold);
+  }
+  .ch-canvas .vis-item.ch-point .vis-item-content {
+    padding-left: 14px;
+  }
+
+  /* ── Period items (range) ───────────────────────────────────────────── */
+  .ch-canvas .vis-item.ch-period.vis-range {
+    border-style: solid;
+    padding: 2px 8px;
+  }
+  /* High-importance period bars carry a gold inner ring. */
+  .ch-canvas .vis-item.ch-period.ch-importance-5 {
+    box-shadow: inset 0 0 0 1px var(--gold);
+  }
+
+  /* ── Sidebar checkbox accent ────────────────────────────────────────── */
+  .ch-timeline-shell input[type='checkbox']:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+</style>

@@ -1,111 +1,18 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import TimelineCanvas from '../../components/timeline/TimelineCanvas.astro';
 import { LANGS, type Lang } from '../../lib/types';
 import { t } from '../../lib/i18n';
-import { loadLanes, loadEntries } from '../../lib/data';
-import { formatYear } from '../../lib/dates';
 
 export function getStaticPaths() {
   return LANGS.map((lang) => ({ params: { lang } }));
 }
-
 const lang = Astro.params.lang as Lang;
-const lanes = loadLanes().filter((l) => l.default_visible);
-const entries = loadEntries();
-
-// Simple static placement: compute a percentage offset across the visible range.
-// Phase 1 fallback view; the vis-timeline island (task #9) replaces this.
-const allYears = entries.map((e) => [e.start_year, e.end_year ?? e.start_year]).flat();
-const minYear = Math.min(...allYears, -4100);
-const maxYear = Math.max(...allYears, 600);
-const span = maxYear - minYear;
-const pct = (y: number) => ((y - minYear) / span) * 100;
-
-const TICKS = [-4000, -3000, -2000, -1000, 0, 500].filter((y) => y >= minYear && y <= maxYear);
-
-const byLane = lanes.map((lane) => ({
-  lane,
-  items: entries
-    .filter((e) => e.lane_slug === lane.slug)
-    .sort((a, b) => a.start_year - b.start_year),
-}));
 ---
 
 <BaseLayout lang={lang} title={t(lang, 'nav.timeline')} pageKey="timeline">
   <section class="mx-auto max-w-[1440px] px-4 pt-7 pb-12">
-    <h1 class="font-serif text-2xl text-ink">{t(lang, 'nav.timeline')}</h1>
-    <p class="mt-1 text-sm italic text-ink-mute">
-      {lang === 'af'
-        ? 'Vereenvoudigde aansig (Fase 1). Die volle interaktiewe tydlyn volg.'
-        : 'Simplified view (Phase 1). Full interactive canvas to follow.'}
-    </p>
-
-    <!-- Axis -->
-    <div class="relative mt-7 h-6 border-b border-rule">
-      {TICKS.map((y) => (
-        <div
-          class="absolute -bottom-0 -translate-x-1/2 text-2xs font-sans uppercase tracking-widest text-ink-mute"
-          style={`left:${pct(y)}%`}
-        >
-          {formatYear(y, lang)}
-        </div>
-      ))}
-    </div>
-
-    <!-- Lanes -->
-    <div class="mt-5 space-y-3.5">
-      {byLane.map(({ lane, items }) => (
-        <div>
-          <div class="flex items-center gap-2 mb-1">
-            <span class="inline-block h-2.5 w-2.5 rounded-sm" style={`background:${lane.colour_soft};border:1px solid ${lane.colour}`}></span>
-            <span class="text-2xs font-sans uppercase tracking-widest text-ink-mute">
-              {lang === 'af' && lane.label_af ? lane.label_af : lane.label_en}
-            </span>
-          </div>
-          <div class="relative h-12 rounded-md" style={`background:${lane.colour_soft}33`}>
-            {items.map((e) => {
-              const tr = e.translations[lang] ?? e.translations.en;
-              const left = pct(e.start_year);
-              const right = pct(e.end_year ?? e.start_year);
-              const width = Math.max(right - left, 0.4);
-              const isPoint = e.end_year === undefined || width < 0.6;
-              return isPoint ? (
-                <a
-                  href={`/${lang}/entry/${e.slug}`}
-                  class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 group"
-                  style={`left:${left}%`}
-                  title={`${tr.title} · ${tr.display_dates}`}
-                >
-                  <span
-                    class="block h-3 w-3 rounded-pill ring-2 ring-paper"
-                    style={`background:${lane.colour}`}
-                  ></span>
-                  <span class="pointer-events-none absolute left-1/2 -translate-x-1/2 mt-1 text-2xs font-serif italic text-ink whitespace-nowrap opacity-0 group-hover:opacity-100">
-                    {tr.title}
-                  </span>
-                </a>
-              ) : (
-                <a
-                  href={`/${lang}/entry/${e.slug}`}
-                  class="absolute top-1/2 -translate-y-1/2 rounded-sm border no-underline overflow-hidden"
-                  style={`left:${left}%;width:${width}%;background:${lane.colour_soft};border-color:${lane.colour};height:24px`}
-                  title={`${tr.title} · ${tr.display_dates}`}
-                >
-                  <span class="block px-2 leading-[22px] text-2xs font-serif italic text-ink truncate">
-                    {tr.title}
-                  </span>
-                </a>
-              );
-            })}
-          </div>
-        </div>
-      ))}
-    </div>
-
-    <p class="mt-7 text-xs italic text-ink-faint">
-      {lang === 'af'
-        ? 'Sleep- en zoom-funksies kom met die vis-timeline-eiland in taak #9.'
-        : 'Drag + zoom land with the vis-timeline island in task #9.'}
-    </p>
+    <h1 class="sr-only">{t(lang, 'nav.timeline')}</h1>
+    <TimelineCanvas lang={lang} />
   </section>
 </BaseLayout>
