@@ -150,11 +150,11 @@ const toggleable = lanes.filter((l) => !l.base_layer);
 </div>
 
 <script>
-  import { mountTimeline, type TimelineConfig } from './timeline.client';
+  import { mountTimeline } from './timeline.client';
 
   const host = document.getElementById('ch-timeline');
   if (host && host.dataset.config) {
-    const config = JSON.parse(host.dataset.config) as TimelineConfig;
+    const config = JSON.parse(host.dataset.config);
     mountTimeline(host, config);
   }
 </script>
