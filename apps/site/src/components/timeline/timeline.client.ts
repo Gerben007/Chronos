@@ -161,7 +161,7 @@ export function mountTimeline(host: HTMLElement, config: TimelineConfig): Timeli
   });
 
   // ── Lane toggles ───────────────────────────────────────────────────────
-  host.parentElement
+  host.closest('.ch-timeline-shell')
     ?.querySelectorAll<HTMLInputElement>('[data-lane-toggle]')
     .forEach((cb) => {
       cb.checked = visibleLanes.has(cb.value);
@@ -177,7 +177,7 @@ export function mountTimeline(host: HTMLElement, config: TimelineConfig): Timeli
     });
 
   // ── Era jump buttons ───────────────────────────────────────────────────
-  host.parentElement?.querySelectorAll<HTMLButtonElement>('[data-era-jump]').forEach((btn) => {
+  host.closest('.ch-timeline-shell')?.querySelectorAll<HTMLButtonElement>('[data-era-jump]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const fromAttr = btn.dataset.eraFrom;
       const toAttr = btn.dataset.eraTo;
@@ -189,7 +189,7 @@ export function mountTimeline(host: HTMLElement, config: TimelineConfig): Timeli
   });
 
   // ── Zoom buttons (vis-timeline-native) ─────────────────────────────────
-  host.parentElement?.querySelectorAll<HTMLButtonElement>('[data-zoom]').forEach((btn) => {
+  host.closest('.ch-timeline-shell')?.querySelectorAll<HTMLButtonElement>('[data-zoom]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const action = btn.dataset.zoom;
       if (action === 'in')   timeline.zoomIn(0.5);
