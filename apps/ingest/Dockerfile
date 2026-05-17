@@ -1,5 +1,6 @@
 # Chronos ingest — Python 3.11 on Debian slim.
-# Multi-stage so the runtime image carries no build tooling.
+# Build context is the repo root (so we can copy db/seed and db/migrations).
+#   docker build -t chronos-ingest:latest -f apps/ingest/Dockerfile .
 
 FROM python:3.11-slim-bookworm AS build
 WORKDIR /build
@@ -7,8 +8,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       build-essential libjpeg-dev zlib1g-dev libxml2-dev libxslt1-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY pyproject.toml ./
-COPY chronos_ingest ./chronos_ingest
+COPY apps/ingest/pyproject.toml ./
+COPY apps/ingest/chronos_ingest ./chronos_ingest
 RUN pip install --no-cache-dir --upgrade pip wheel && \
     pip wheel --no-cache-dir --wheel-dir=/wheels .
 
@@ -25,8 +26,11 @@ COPY --from=build /wheels /wheels
 RUN pip install --no-cache-dir --find-links=/wheels chronos-ingest \
     && rm -rf /wheels
 
+# Bake the schema + seed data into the image so the seed command works
+# without external volume mounts.
 WORKDIR /app
-COPY --chown=chronos:chronos chronos_ingest /app/chronos_ingest
+COPY --chown=chronos:chronos apps/ingest/chronos_ingest /app/chronos_ingest
+COPY --chown=chronos:chronos db /app/db
 
 USER 1000:1000
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1

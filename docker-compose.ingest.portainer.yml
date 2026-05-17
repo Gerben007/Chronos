@@ -1,0 +1,50 @@
+version: '3.8'
+
+# Chronos ingest stack — deploys the file-pipeline service.
+#
+# Build the image once on the host (note: build context is the repo root):
+#   cd ~/chronos-deploy/chronos && \
+#   docker build -t chronos-ingest:latest -f apps/ingest/Dockerfile .
+#
+# Initialise the SQLite DB once (creates schema + seeds lanes/entries):
+#   docker run --rm -v chronos-db:/data/db chronos-ingest:latest \
+#     python -m chronos_ingest.seed --db /data/db/chronos.db
+#
+# Preview what the ingest will see in your Nextcloud (no writes):
+#   docker run --rm --env-file .env -v chronos-db:/data/db chronos-ingest:latest \
+#     python -m chronos_ingest list
+#
+# Run one tick manually:
+#   docker run --rm --env-file .env -v chronos-db:/data/db chronos-ingest:latest \
+#     python -m chronos_ingest tick
+#
+# Deploy this stack via Portainer's web editor and set the secrets in the
+# Stack's env-vars panel (not in this file).
+
+services:
+  chronos-ingest:
+    image: chronos-ingest:latest
+    container_name: chronos-ingest
+    restart: unless-stopped
+    environment:
+      - NEXTCLOUD_URL=${NEXTCLOUD_URL}
+      - NEXTCLOUD_USER=${NEXTCLOUD_USER}
+      - NEXTCLOUD_APP_PASSWORD=${NEXTCLOUD_APP_PASSWORD}
+      - NEXTCLOUD_ROOT_PATH=/Chronos
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - ANTHROPIC_MODEL=claude-haiku-4-5-20251001
+      - DAILY_HAIKU_BUDGET_USD=1.00
+      - SQLITE_PATH=/data/db/chronos.db
+    volumes:
+      - chronos-db:/data/db
+    networks:
+      - nginx_default
+    labels:
+      com.example.description: "Chronos ingest API + tick runner"
+
+volumes:
+  chronos-db:
+
+networks:
+  nginx_default:
+    external: true
