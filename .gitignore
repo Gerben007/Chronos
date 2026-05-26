@@ -40,3 +40,6 @@ Thumbs.db
 # Coverage / build
 coverage/
 .nyc_output/
+
+# Graphify generated knowledge graph
+graphify-out/
